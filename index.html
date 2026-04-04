@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<title>Veille IA — Léo & Déborah</title>
+<style>
+:root {
+  --accent: #6C5CE7;
+  --accent2: #A29BFE;
+  --accent-bg: #F1F0FF;
+  --evening-bg: linear-gradient(135deg, #0C1A3A 0%, #091228 100%);
+  --leo: #6C5CE7; --leo-bg: #F1F0FF;
+  --deb: #00B894; --deb-bg: #E6FAF5;
+  --alert: #FF6B6B; --alert-bg: #FFF0F0;
+  --fav: #FDCB6E; --fav-bg: #FFFBF0;
+  --toread: #00B894; --toread-bg: #E6FAF5;
+  --text: #2D3436; --text2: #636E72; --text3: #B2BEC3;
+  --bg: #F7F8FC; --card: #FFFFFF; --border: #EDF0F5;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow: 0 4px 20px rgba(0,0,0,0.06);
+  --shadow-lg: 0 8px 40px rgba(0,0,0,0.1);
+  --r: 16px; --r-sm: 10px;
+  --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Urbanist',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer}
+
+/* HEADER */
+.header{background:linear-gradient(135deg,#0C1A3A 0%,#1A1040 60%,#2D1B69 100%);position:sticky;top:0;z-index:100;box-shadow:0 4px 24px rgba(0,0,0,0.15)}
+.h-top{max-width:1200px;margin:0 auto;padding:18px 24px;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.app-t{display:flex;align-items:center;gap:14px}
+.app-logo{width:42px;height:42px;background:linear-gradient(135deg,var(--accent),#A29BFE);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 4px 16px rgba(108,92,231,0.4)}
+.app-info h1{font-size:20px;font-weight:800;color:#fff;letter-spacing:-0.5px;line-height:1.2}
+.app-info p{font-size:11px;font-weight:500;color:rgba(255,255,255,0.5);letter-spacing:1px;text-transform:uppercase}
+.prof-sw{display:flex;gap:4px;background:rgba(255,255,255,0.08);padding:4px;border-radius:14px;border:1px solid rgba(255,255,255,0.1)}
+.prof-btn{padding:8px 20px;border-radius:11px;border:none;font-size:13px;font-weight:600;background:transparent;color:rgba(255,255,255,0.5);transition:all var(--transition)}
+.prof-btn:hover{background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.8)}
+.prof-btn.active[data-p="leo"]{background:var(--leo);color:#fff;box-shadow:0 2px 12px rgba(108,92,231,0.5)}
+.prof-btn.active[data-p="deborah"]{background:var(--deb);color:#fff;box-shadow:0 2px 12px rgba(0,184,148,0.5)}
+.header-actions{margin-left:auto;display:flex;gap:8px}
+.btn-icon{background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.7);padding:9px 16px;border-radius:var(--r-sm);border:1px solid rgba(255,255,255,0.12);font-size:13px;font-weight:600;transition:all var(--transition);display:flex;align-items:center;gap:6px}
+.btn-icon:hover{background:rgba(255,255,255,0.15);color:#fff;border-color:rgba(255,255,255,0.25);transform:translateY(-1px)}
+.btn-ref{background:var(--accent);color:#fff;padding:9px 18px;border-radius:var(--r-sm);border:none;font-size:13px;font-weight:700;transition:all var(--transition);display:flex;align-items:center;gap:6px;box-shadow:0 2px 12px rgba(108,92,231,0.4)}
+.btn-ref:hover{background:#8577ED;box-shadow:0 4px 20px rgba(108,92,231,0.5);transform:translateY(-1px)}
+.feed-count-badge{background:rgba(255,255,255,0.2);color:#fff;font-size:11px;font-weight:800;padding:2px 7px;border-radius:10px;margin-left:4px}
+
+/* SOURCE STATUS */
+.src-st{max-width:1200px;margin:0 auto;padding:10px 24px 14px;display:flex;gap:14px;flex-wrap:wrap}
+.src-s{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:500;color:rgba(255,255,255,0.45)}
+.dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.dot.loading{background:#FDCB6E;animation:pulse 1.2s ease infinite}
+.dot.ok{background:#00B894}.dot.error{background:#FF6B6B}
+.src-s .err-msg{color:#FF8A8A;font-size:10px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.src-s .btn-retry{background:rgba(255,107,107,0.15);border:1px solid rgba(255,107,107,0.3);color:#FF8A8A;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:600;transition:all var(--transition)}
+.src-s .btn-retry:hover{background:var(--alert);color:#fff}
+.src-s .via{color:#6BBFA0;font-size:10px;font-weight:600}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* EVENING */
+.evening{background:var(--evening-bg);color:#D4DFEE;padding:0 24px;overflow:hidden}
+.evening.collapsed .ev-body{display:none}
+.ev-in{max-width:1200px;margin:0 auto;padding:20px 0}
+.ev-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.ev-title{font-size:16px;font-weight:700;color:#8EAADC;display:flex;align-items:center;gap:8px}
+.ev-ts{font-size:12px;color:#6B84B8;margin-top:2px}
+.btn-tog{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#8EAADC;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;transition:all var(--transition)}
+.btn-tog:hover{background:rgba(255,255,255,0.15)}
+.ev-body{font-size:14px;line-height:1.8;color:#C8D6EE;margin-top:14px}
+.ev-body h3{color:#8EAADC;font-size:15px;font-weight:700;margin:16px 0 6px;letter-spacing:-0.2px}
+.ev-body h3:first-child{margin-top:4px}
+.ev-body ul{margin:6px 0 10px 20px}
+.ev-body li{margin-bottom:6px}
+.ev-body .sign{margin-top:16px;font-style:italic;color:#6B84B8;font-size:15px}
+.ld-dots{display:inline-flex;gap:5px;align-items:center}
+.ld-dots span{width:7px;height:7px;border-radius:50%;background:#8EAADC;animation:bounce 1.4s infinite}
+.ld-dots span:nth-child(2){animation-delay:.2s}
+.ld-dots span:nth-child(3){animation-delay:.4s}
+@keyframes bounce{0%,80%,100%{transform:scale(0)}40%{transform:scale(1)}}
+
+/* TOOLBAR */
+.toolbar{background:var(--card);border-bottom:1px solid var(--border);padding:8px 24px}
+.toolbar-in{max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.toolbar-right{display:flex;align-items:center;gap:8px;margin-left:auto;flex-wrap:wrap}
+.kw-tags{display:flex;gap:5px;flex-wrap:wrap}
+.kw-tag{background:linear-gradient(135deg,#F9A825,#FF8F00);color:#fff;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;display:flex;align-items:center;gap:5px;box-shadow:0 2px 6px rgba(249,168,37,0.2)}
+.kw-tag button{background:rgba(255,255,255,0.25);border:none;color:#fff;width:16px;height:16px;border-radius:50%;font-size:11px;display:flex;align-items:center;justify-content:center;transition:background var(--transition)}
+.kw-tag button:hover{background:rgba(255,255,255,0.5)}
+.kw-add{display:flex;gap:4px}
+.kw-add input{padding:5px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;outline:none;width:100px;background:#fff;transition:border-color var(--transition)}
+.kw-add input:focus{border-color:var(--accent)}
+.kw-add button{padding:5px 12px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700}
+.nav-tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;padding:4px 0}
+.nav-tabs::-webkit-scrollbar{display:none}
+.nav-tab{padding:8px 18px;border-radius:var(--r-sm);border:none;font-size:14px;font-weight:600;background:transparent;color:var(--text2);white-space:nowrap;transition:all var(--transition)}
+.nav-tab:hover{background:var(--accent-bg);color:var(--accent)}
+.nav-tab.active{background:var(--accent);color:#fff;box-shadow:0 2px 12px rgba(108,92,231,0.3)}
+.nav-tab .badge{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;border-radius:11px;font-size:11px;font-weight:800;margin-left:6px;padding:0 6px}
+.nav-tab.active .badge{background:rgba(255,255,255,0.25);color:#fff}
+.nav-tab:not(.active) .badge{background:var(--accent-bg);color:var(--accent)}
+.src-filters{display:flex;gap:6px;padding:0 0 12px;overflow-x:auto;scrollbar-width:none}
+.src-filters::-webkit-scrollbar{display:none}
+.src-f{padding:6px 16px;border-radius:20px;border:1.5px solid var(--border);font-size:12px;font-weight:600;background:var(--card);color:var(--text2);white-space:nowrap;transition:all var(--transition)}
+.src-f:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+.src-f.active{background:var(--accent);color:#fff;border-color:var(--accent);box-shadow:0 2px 10px rgba(108,92,231,0.25)}
+
+/* MAIN */
+.main{max-width:1200px;margin:0 auto;padding:24px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:20px}
+.empty-state{text-align:center;padding:80px 20px;color:var(--text3);grid-column:1/-1}
+.empty-state .em{font-size:56px;margin-bottom:16px}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:22px;transition:all var(--transition);position:relative;display:flex;flex-direction:column}
+.card:hover{box-shadow:var(--shadow);transform:translateY(-3px);border-color:transparent}
+.card.is-fav{border-color:var(--fav);background:var(--fav-bg)}
+.card.is-toread{border-color:var(--toread);background:var(--toread-bg)}
+.card.is-read{background:#FAFAFA;opacity:.65}
+.card.is-read:hover{opacity:.85}
+.card.is-alert{border-left:4px solid var(--alert);background:var(--alert-bg)}
+.card-top{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.src-badge{padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;color:#fff;white-space:nowrap;letter-spacing:0.3px;text-transform:uppercase}
+.alert-badge{background:var(--alert);color:#fff;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;animation:alertPulse 2s ease infinite}
+@keyframes alertPulse{0%,100%{opacity:1}50%{opacity:.7}}
+.read-badge{background:var(--text3);color:#fff;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700}
+.card-title{font-size:17px;font-weight:700;line-height:1.45;margin-bottom:8px;letter-spacing:-0.3px}
+.card-title a{transition:color var(--transition)}
+.card-title a:hover{color:var(--accent)}
+.card.is-read .card-title a{text-decoration:line-through;color:var(--text3)}
+.card-date{font-size:13px;color:var(--text2);margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.card-date .rel{background:var(--accent-bg);color:var(--accent);padding:2px 10px;border-radius:12px;font-size:11px;font-weight:700}
+.card-desc{font-size:14px;color:var(--text2);line-height:1.65;margin-bottom:16px;flex:1;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.card-actions{display:flex;gap:6px;flex-wrap:wrap;padding-top:14px;border-top:1px solid var(--border)}
+.act-btn{padding:7px 14px;border-radius:10px;border:1.5px solid var(--border);font-size:13px;font-weight:500;background:var(--card);color:var(--text2);transition:all var(--transition);display:flex;align-items:center;gap:4px;white-space:nowrap}
+.act-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-bg);transform:translateY(-1px)}
+.act-btn.on-fav{background:var(--fav-bg);border-color:var(--fav);color:#B8860B}
+.act-btn.on-toread{background:var(--toread-bg);border-color:var(--toread);color:#00896A}
+.act-btn.on-read{background:#F0F0F0;border-color:var(--text3);color:var(--text2)}
+.act-btn.has-msg{border-color:var(--accent);color:var(--accent);background:var(--accent-bg)}
+
+/* NOTES & THREAD */
+.note-area{margin-top:14px;display:none}
+.note-area.open{display:block}
+.note-area textarea{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:14px;font-family:inherit;resize:vertical;min-height:70px;outline:none;transition:border-color var(--transition);line-height:1.6}
+.note-area textarea:focus{border-color:var(--accent)}
+.note-preview{margin-top:10px;padding:10px 14px;background:var(--fav-bg);border-radius:var(--r-sm);font-size:13px;color:#8B7000;line-height:1.5;cursor:pointer;border:1px solid #F5E6C8}
+.thread{margin-top:14px;display:none;border-top:1px solid var(--border);padding-top:14px}
+.thread.open{display:block}
+.thread-msgs{max-height:260px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
+.msg-bubble{max-width:82%;padding:10px 14px;border-radius:16px;font-size:13px;line-height:1.5}
+.msg-bubble.leo{background:var(--leo-bg);color:#4A3DA8;align-self:flex-start;border-bottom-left-radius:4px}
+.msg-bubble.deborah{background:var(--deb-bg);color:#006B52;align-self:flex-end;border-bottom-right-radius:4px}
+.msg-meta{font-size:11px;opacity:.65;margin-top:3px}
+.msg-author{font-weight:700}
+.thread-input{display:flex;gap:8px}
+.thread-input input{flex:1;padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:13px;outline:none}
+.thread-input input:focus{border-color:var(--accent)}
+.thread-input button{padding:10px 18px;border-radius:var(--r-sm);border:none;font-size:13px;font-weight:700;color:#fff}
+.thread-input button.leo{background:var(--leo)}
+.thread-input button.deborah{background:var(--deb)}
+
+/* TOAST */
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--text);color:#fff;padding:14px 28px;border-radius:14px;font-size:14px;font-weight:600;z-index:999;opacity:0;transition:all .3s;pointer-events:none;box-shadow:var(--shadow-lg)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ===== SETTINGS MODAL ===== */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);backdrop-filter:blur(6px);z-index:200;opacity:0;pointer-events:none;transition:opacity .3s}
+.overlay.open{opacity:1;pointer-events:auto}
+.panel{position:fixed;top:2vh;left:2vw;right:2vw;bottom:2vh;width:auto;max-width:none;max-height:none;background:var(--card);z-index:201;transition:all .3s cubic-bezier(0.4,0,0.2,1);display:flex;flex-direction:column;box-shadow:0 24px 80px rgba(0,0,0,0.2);border-radius:20px;opacity:0;pointer-events:none;transform:scale(0.97)}
+.panel.open{opacity:1;pointer-events:auto;transform:scale(1)}
+.panel-head{padding:16px 28px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;border-radius:20px 20px 0 0;flex-shrink:0}
+.panel-head h2{font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.3px}
+.panel-close{background:none;border:none;font-size:24px;color:var(--text2);padding:4px 8px;border-radius:8px;transition:all var(--transition)}
+.panel-close:hover{background:var(--bg);color:var(--text)}
+.panel-body{flex:1;overflow-y:auto;padding:20px 28px;display:flex;flex-direction:column;gap:20px}
+.panel-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;flex:1}
+.panel-section{background:var(--bg);border-radius:14px;padding:16px;border:1px solid var(--border)}
+.panel-section h3{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.btn-toggle-all{margin-left:auto;background:var(--accent-bg);color:var(--accent);border:1px solid var(--accent);padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;transition:all var(--transition)}
+.btn-toggle-all:hover{background:var(--accent);color:#fff}
+.panel-section h3{font-size:14px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.panel-section h3 span{font-size:11px;background:var(--accent-bg);color:var(--accent);padding:2px 8px;border-radius:8px;font-weight:700;text-transform:none;letter-spacing:0}
+.feed-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;margin-bottom:5px;transition:all var(--transition)}
+.feed-item:hover{border-color:var(--accent-bg);background:var(--bg)}
+.feed-item.active{border-color:var(--accent);background:var(--accent-bg)}
+.feed-info{flex:1;min-width:0}
+.feed-info .fname{font-size:13px;font-weight:600;color:var(--text);line-height:1.2}
+.feed-info .furl{font-size:10px;color:var(--text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.feed-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.feed-toggle{position:relative;width:44px;height:24px;flex-shrink:0}
+.feed-toggle input{opacity:0;width:0;height:0}
+.feed-toggle .slider{position:absolute;inset:0;background:#DFE6E9;border-radius:12px;cursor:pointer;transition:all var(--transition)}
+.feed-toggle .slider:before{content:'';position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;top:3px;left:3px;transition:all var(--transition);box-shadow:0 1px 4px rgba(0,0,0,0.15)}
+.feed-toggle input:checked+.slider{background:var(--accent)}
+.feed-toggle input:checked+.slider:before{transform:translateX(20px)}
+.feed-remove{background:none;border:none;color:var(--text3);font-size:18px;padding:4px;border-radius:6px;transition:all var(--transition)}
+.feed-remove:hover{color:var(--alert);background:var(--alert-bg)}
+
+/* Add custom feed */
+.add-feed{border:2px dashed var(--border);border-radius:var(--r-sm);padding:16px;margin-top:12px}
+.add-feed h4{font-size:13px;font-weight:700;color:var(--text2);margin-bottom:10px}
+.add-feed-row{display:flex;gap:8px;margin-bottom:8px}
+.add-feed-row input,.add-feed-row select{flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;outline:none;transition:border-color var(--transition)}
+.add-feed-row input:focus,.add-feed-row select:focus{border-color:var(--accent)}
+.add-feed-row select{max-width:160px;background:var(--card)}
+.btn-add-feed{width:100%;padding:10px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;transition:all var(--transition)}
+.btn-add-feed:hover{background:var(--accent2);transform:translateY(-1px)}
+
+/* Active count badge in header */
+.feed-count-badge{background:var(--accent);color:#fff;font-size:11px;font-weight:800;padding:2px 7px;border-radius:10px;margin-left:4px}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  .h-top{padding:12px 16px;gap:10px}
+  .app-logo{width:34px;height:34px;font-size:18px;border-radius:10px}
+  .app-info h1{font-size:16px}
+  .app-info p{font-size:9px}
+  .grid{grid-template-columns:1fr;gap:14px}
+  .main{padding:16px}
+  .card{padding:18px}
+  .src-st,.toolbar{padding-left:16px;padding-right:16px}
+  .toolbar-right{margin-left:0;width:100%}
+  .panel{top:1vh;left:1vw;right:1vw;bottom:1vh;border-radius:14px}
+  .panel-grid{grid-template-columns:1fr}
+}
+@media(max-width:480px){
+  .prof-btn{padding:6px 12px;font-size:12px}
+  .nav-tab{padding:7px 12px;font-size:13px}
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="h-top">
+    <div class="app-t">
+      <div class="app-logo">🔮</div>
+      <div class="app-info">
+        <h1>Veille IA</h1>
+        <p>Léo & Déborah</p>
+      </div>
+    </div>
+    <div class="prof-sw">
+      <button class="prof-btn active" data-p="leo" onclick="switchProfile('leo')">Léo</button>
+      <button class="prof-btn" data-p="deborah" onclick="switchProfile('deborah')">Déborah</button>
+    </div>
+    <div class="header-actions">
+      <button class="btn-icon" onclick="openPanel()" id="btnSources">⚙ Sources <span class="feed-count-badge" id="feedCountBadge">0</span></button>
+      <button class="btn-ref" onclick="loadAll()">↻ Actualiser</button>
+    </div>
+  </div>
+  <div class="src-st" id="srcStatuses"></div>
+</header>
+
+<!-- Settings Panel -->
+<div class="overlay" id="overlay" onclick="closePanel()"></div>
+<div class="panel" id="panel">
+  <div class="panel-head">
+    <h2>Mes sources</h2>
+    <button class="panel-close" onclick="closePanel()">✕</button>
+  </div>
+  <div class="panel-body" id="panelBody"></div>
+</div>
+
+<div class="evening" id="evening">
+  <div class="ev-in">
+    <div class="ev-head">
+      <div>
+        <div class="ev-title">🌙 Résumé du soir</div>
+        <div class="ev-ts" id="evTs"></div>
+      </div>
+      <button class="btn-tog" id="evToggle" onclick="toggleEvening()">Réduire</button>
+    </div>
+    <div class="ev-body" id="evBody">
+      <div class="ld-dots"><span></span><span></span><span></span></div> Chargement...
+    </div>
+  </div>
+</div>
+
+<div class="toolbar">
+  <div class="toolbar-in">
+    <div class="nav-tabs" id="navTabs"></div>
+    <div class="toolbar-right">
+      <div class="kw-tags" id="kwTags"></div>
+      <div class="kw-add">
+        <input type="text" id="kwInput" placeholder="Mot-clé..." onkeydown="if(event.key==='Enter')addKeyword()" />
+        <button onclick="addKeyword()">+</button>
+      </div>
+    </div>
+  </div>
+  <div class="toolbar-in">
+    <div class="src-filters" id="srcFilters"></div>
+  </div>
+</div>
+
+<main class="main"><div class="grid" id="grid"></div></main>
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== CATALOGUE DE FLUX =====
+const CATALOG = {
+  'IA France': [
+    { name: 'Presse-citron', url: 'https://www.presse-citron.net/feed/', color: '#F57C00' },
+    { name: 'Blog du Modérateur', url: 'https://www.blogdumoderateur.com/ia/feed/', color: '#1565C0' },
+    { name: 'Le Monde IA', url: 'https://www.lemonde.fr/intelligence-artificielle/rss_full.xml', color: '#004A9C' },
+    { name: 'ActuIA', url: 'https://www.actuia.com/feed/', color: '#00897B' },
+    { name: 'LeBigData', url: 'https://www.lebigdata.fr/feed', color: '#FF6B35' },
+    { name: 'Siècle Digital', url: 'https://siecledigital.fr/feed', color: '#5C6BC0' }
+  ],
+  'IA International': [
+    { name: 'OpenAI', url: 'https://openai.com/blog/rss.xml', color: '#412991' },
+    { name: 'DeepMind', url: 'https://deepmind.google/blog/rss.xml', color: '#4285F4' },
+    { name: 'Google AI Blog', url: 'https://blog.google/technology/ai/rss/', color: '#EA4335' },
+    { name: 'MIT News IA', url: 'https://news.mit.edu/rss/topic/artificial-intelligence2', color: '#A31F34' }
+  ],
+  'Actualités': [
+    { name: 'BFMTV International', url: 'https://www.bfmtv.com/rss/international/', color: '#D32F2F' },
+    { name: 'BFMTV Tech IA', url: 'https://www.bfmtv.com/rss/tech/intelligence-artificielle/', color: '#E65100' }
+  ],
+  'Tech généraliste': [
+    { name: '01net', url: 'https://www.01net.com/actualites/feed/', color: '#E91E63' },
+    { name: 'Numerama', url: 'https://www.numerama.com/tech/intelligence-artificielle/feed/', color: '#E91E63' },
+    { name: 'Clubic IA', url: 'https://www.clubic.com/feed/technologies-d-avenir/intelligence-artificielle/rss', color: '#00BFA5' },
+    { name: 'TechCrunch AI', url: 'https://techcrunch.com/category/artificial-intelligence/feed/', color: '#0A9E01' }
+  ]
+};
+
+// Flatten catalog for lookup
+const ALL_FEEDS = {};
+for (const cat in CATALOG) CATALOG[cat].forEach(f => ALL_FEEDS[f.url] = { ...f, category: cat });
+
+// ===== STATE =====
+let S = {
+  articles: [],
+  profile: localStorage.getItem('profile') || 'leo',
+  tab: 'all',
+  source: 'all',
+  statuses: {},
+  errors: {},
+  evCollapsed: true,
+  evGenerated: false,
+  keywords: JSON.parse(localStorage.getItem('keywords') || '["Claude","Anthropic","GPT","Gemini","Mistral","LLM","OpenAI","Meta AI"]'),
+  openThreads: new Set(),
+  openNotes: new Set()
+};
+
+// ===== FEEDS SELECTION (localStorage) =====
+function getActiveFeeds() {
+  const saved = localStorage.getItem('active_feeds');
+  if (saved) return JSON.parse(saved);
+  // Default : les 5 sources initiales
+  return [
+    { name: 'Presse-citron', url: 'https://www.presse-citron.net/feed/', color: '#F57C00' },
+    { name: 'Blog du Modérateur', url: 'https://www.blogdumoderateur.com/ia/feed/', color: '#1565C0' },
+    { name: '01net', url: 'https://www.01net.com/actualites/feed/', color: '#E91E63' },
+    { name: 'Le Monde IA', url: 'https://www.lemonde.fr/intelligence-artificielle/rss_full.xml', color: '#004A9C' },
+    { name: 'ActuIA', url: 'https://www.actuia.com/feed/', color: '#00897B' },
+    { name: 'OpenAI', url: 'https://openai.com/blog/rss.xml', color: '#412991' }
+  ];
+}
+function saveActiveFeeds(feeds) {
+  localStorage.setItem('active_feeds', JSON.stringify(feeds));
+}
+function getCustomFeeds() {
+  return JSON.parse(localStorage.getItem('custom_feeds') || '[]');
+}
+function saveCustomFeeds(feeds) {
+  localStorage.setItem('custom_feeds', JSON.stringify(feeds));
+}
+
+function isActive(url) {
+  return getActiveFeeds().some(f => f.url === url);
+}
+
+function toggleFeedActive(url) {
+  let feeds = getActiveFeeds();
+  const idx = feeds.findIndex(f => f.url === url);
+  if (idx !== -1) {
+    feeds.splice(idx, 1);
+  } else {
+    // Find in catalog or custom
+    const cat = ALL_FEEDS[url];
+    const custom = getCustomFeeds().find(f => f.url === url);
+    const feed = cat || custom;
+    if (feed) feeds.push({ name: feed.name, url: feed.url, color: feed.color });
+  }
+  saveActiveFeeds(feeds);
+  renderPanel();
+  updateFeedBadge();
+}
+
+function toggleAllCategory(catName) {
+  const feeds = catName === 'custom' ? getCustomFeeds() : (CATALOG[catName] || []);
+  const active = getActiveFeeds();
+  const allActive = feeds.every(f => active.some(a => a.url === f.url));
+  let updated = [...active];
+  if (allActive) {
+    // Tout désactiver dans cette catégorie
+    updated = updated.filter(a => !feeds.some(f => f.url === a.url));
+  } else {
+    // Tout activer dans cette catégorie
+    feeds.forEach(f => {
+      if (!updated.some(a => a.url === f.url)) {
+        updated.push({ name: f.name, url: f.url, color: f.color });
+      }
+    });
+  }
+  saveActiveFeeds(updated);
+  renderPanel();
+  updateFeedBadge();
+}
+
+function addCustomFeed(name, url, color, category) {
+  if (!name || !url) return;
+  const customs = getCustomFeeds();
+  if (customs.some(f => f.url === url)) { toast('Ce flux existe déjà'); return; }
+  const feed = { name, url, color: color || '#666', category: category || 'Personnalisé' };
+  customs.push(feed);
+  saveCustomFeeds(customs);
+  // Also activate it
+  const active = getActiveFeeds();
+  active.push({ name: feed.name, url: feed.url, color: feed.color });
+  saveActiveFeeds(active);
+  renderPanel();
+  updateFeedBadge();
+  toast(name + ' ajouté !');
+}
+
+function removeCustomFeed(url) {
+  let customs = getCustomFeeds().filter(f => f.url !== url);
+  saveCustomFeeds(customs);
+  let active = getActiveFeeds().filter(f => f.url !== url);
+  saveActiveFeeds(active);
+  renderPanel();
+  updateFeedBadge();
+}
+
+function updateFeedBadge() {
+  $('feedCountBadge').textContent = getActiveFeeds().length;
+}
+
+// ===== PANEL RENDER =====
+function openPanel() { $('overlay').classList.add('open'); $('panel').classList.add('open'); renderPanel(); }
+function closePanel() { $('overlay').classList.remove('open'); $('panel').classList.remove('open'); }
+
+function renderPanel() {
+  let grid = '';
+
+  // Catalog sections
+  for (const cat in CATALOG) {
+    const feeds = CATALOG[cat];
+    const activeCount = feeds.filter(f => isActive(f.url)).length;
+    const allOn = activeCount === feeds.length;
+    grid += `<div class="panel-section"><h3>${cat} <span>${activeCount}/${feeds.length}</span><button class="btn-toggle-all" onclick="toggleAllCategory('${cat.replace(/'/g,"\\'")}')"> ${allOn ? '✕ Tout désactiver' : '✓ Tout activer'}</button></h3>`;
+    feeds.forEach(f => {
+      const active = isActive(f.url);
+      grid += `<div class="feed-item${active ? ' active' : ''}">
+        <div class="feed-dot" style="background:${f.color}"></div>
+        <div class="feed-info">
+          <div class="fname">${f.name}</div>
+          <div class="furl">${f.url}</div>
+        </div>
+        <label class="feed-toggle">
+          <input type="checkbox" ${active ? 'checked' : ''} onchange="toggleFeedActive('${f.url.replace(/'/g, "\\'")}')" />
+          <span class="slider"></span>
+        </label>
+      </div>`;
+    });
+    grid += '</div>';
+  }
+
+  // Custom feeds
+  const customs = getCustomFeeds();
+  if (customs.length > 0) {
+    const activeCount = customs.filter(f => isActive(f.url)).length;
+    const allOnC = activeCount === customs.length;
+    grid += `<div class="panel-section"><h3>Personnalisé <span>${activeCount}/${customs.length}</span><button class="btn-toggle-all" onclick="toggleAllCategory('custom')">${allOnC ? '✕ Tout désactiver' : '✓ Tout activer'}</button></h3>`;
+    customs.forEach(f => {
+      const active = isActive(f.url);
+      grid += `<div class="feed-item${active ? ' active' : ''}">
+        <div class="feed-dot" style="background:${f.color}"></div>
+        <div class="feed-info">
+          <div class="fname">${f.name}</div>
+          <div class="furl">${f.url}</div>
+        </div>
+        <label class="feed-toggle">
+          <input type="checkbox" ${active ? 'checked' : ''} onchange="toggleFeedActive('${f.url.replace(/'/g, "\\'")}')" />
+          <span class="slider"></span>
+        </label>
+        <button class="feed-remove" onclick="removeCustomFeed('${f.url.replace(/'/g, "\\'")}')" title="Supprimer">🗑</button>
+      </div>`;
+    });
+    grid += '</div>';
+  }
+
+  // Add custom feed
+  grid += `<div class="panel-section">
+    <h3>Ajouter un flux</h3>
+    <div class="add-feed">
+      <div class="add-feed-row">
+        <input type="text" id="newFeedName" placeholder="Nom du flux" />
+        <input type="color" id="newFeedColor" value="#6C5CE7" style="width:44px;padding:4px;border-radius:8px;border:1.5px solid var(--border);cursor:pointer" />
+      </div>
+      <div class="add-feed-row">
+        <input type="text" id="newFeedUrl" placeholder="https://example.com/feed/" />
+      </div>
+      <button class="btn-add-feed" onclick="addCustomFeed($('newFeedName').value.trim(),$('newFeedUrl').value.trim(),$('newFeedColor').value);$('newFeedName').value='';$('newFeedUrl').value=''">+ Ajouter ce flux</button>
+    </div>
+  </div>`;
+
+  let html = `<div class="panel-grid">${grid}</div>`;
+  html += `<div style="padding:16px 0 4px;border-top:1px solid var(--border);text-align:center;flex-shrink:0">
+    <button class="btn-ref" style="width:100%;max-width:400px;justify-content:center;font-size:15px;padding:14px" onclick="closePanel();loadAll()">↻ Appliquer et recharger</button>
+  </div>`;
+
+  $('panelBody').innerHTML = html;
+}
+
+// ===== HELPERS =====
+function $(id) { return document.getElementById(id); }
+function gkey(guid) {
+  let h = 5381;
+  for (let i = 0; i < guid.length; i++) h = ((h << 5) + h + guid.charCodeAt(i)) & 0x7fffffff;
+  return h.toString(36);
+}
+function stripHtml(html) { const d = document.createElement('div'); d.innerHTML = html || ''; return d.textContent || ''; }
+function escHtml(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+
+const JOURS = ['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
+const MOIS = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+function fmtDate(ds) {
+  const d = new Date(ds); if (isNaN(d)) return ds || '';
+  return `${JOURS[d.getDay()]} ${d.getDate()} ${MOIS[d.getMonth()]} ${d.getFullYear()} à ${String(d.getHours()).padStart(2,'0')}h${String(d.getMinutes()).padStart(2,'0')}`;
+}
+function fmtDateShort(ds) {
+  const d = new Date(ds); if (isNaN(d)) return '';
+  return `${d.getDate()} ${MOIS[d.getMonth()]}`;
+}
+function relTime(ds) {
+  const d = new Date(ds); if (isNaN(d)) return '';
+  const diff = Date.now() - d.getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return "à l'instant";
+  if (m < 60) return `il y a ${m}min`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `il y a ${h}h`;
+  const j = Math.floor(h / 24);
+  if (j < 7) return `il y a ${j}j`;
+  return `il y a ${Math.floor(j/7)}sem`;
+}
+function toast(msg) {
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// LocalStorage
+function pGet(key) { return JSON.parse(localStorage.getItem(`${S.profile}_${key}`) || (key === 'notes' ? '{}' : '[]')); }
+function pSet(key, val) { localStorage.setItem(`${S.profile}_${key}`, JSON.stringify(val)); }
+function getMsgs(guid) { return JSON.parse(localStorage.getItem('m_' + gkey(guid)) || '[]'); }
+function setMsgs(guid, msgs) { localStorage.setItem('m_' + gkey(guid), JSON.stringify(msgs)); }
+function hasAnyMsgs(guid) { return getMsgs(guid).length > 0; }
+function toggleList(key, guid) {
+  const list = pGet(key); const idx = list.indexOf(guid);
+  if (idx === -1) list.push(guid); else list.splice(idx, 1);
+  pSet(key, list);
+}
+function isAlert(a) {
+  const t = (a.title || '').toLowerCase();
+  return S.keywords.some(k => t.includes(k.toLowerCase()));
+}
+
+// RSS via rss2json
+async function fetchRSS(feed) {
+  const url = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed.url)}`;
+  const r = await fetch(url);
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  const d = await r.json();
+  if (d.status !== 'ok') throw new Error(d.message || 'Erreur flux');
+  return (d.items || []).slice(0, 6).map(it => ({
+    title: it.title || 'Sans titre',
+    link: it.link || '#',
+    pubDate: it.pubDate || '',
+    description: it.description || '',
+    guid: it.guid || it.link || (feed.name + it.title),
+    source: feed.name,
+    sourceColor: feed.color
+  }));
+}
+
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function loadFeed(feed) {
+  S.statuses[feed.name] = 'loading'; S.errors[feed.name] = '';
+  renderStatuses();
+  try {
+    const items = await fetchRSS(feed);
+    S.statuses[feed.name] = 'ok';
+    S.errors[feed.name] = items.length + ' articles';
+    renderStatuses(); return items;
+  } catch (e) {
+    S.statuses[feed.name] = 'error';
+    S.errors[feed.name] = e.message;
+    renderStatuses(); return [];
+  }
+}
+
+async function retryFeed(name) {
+  const feeds = getActiveFeeds();
+  const feed = feeds.find(f => f.name === name); if (!feed) return;
+  S.articles = S.articles.filter(a => a.source !== name);
+  const items = await loadFeed(feed);
+  S.articles = [...S.articles, ...items].sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
+  renderArticles(); renderNav(); renderStats();
+  if (S.evGenerated) generateEvening();
+}
+
+async function loadAll() {
+  const feeds = getActiveFeeds();
+  S.articles = []; S.statuses = {}; S.errors = {};
+  renderArticles(); renderNav(); renderStatuses();
+  $('evBody').innerHTML = 'Cliquez sur "Afficher" pour générer le résumé du soir.';
+  $('evTs').textContent = '';
+  S.evGenerated = false;
+  for (let i = 0; i < feeds.length; i++) {
+    if (i > 0) await delay(500);
+    const items = await loadFeed(feeds[i]);
+    S.articles = [...S.articles, ...items].sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
+    renderArticles(); renderNav(); renderStats();
+  }
+}
+
+// Résumé du soir
+function generateEvening() {
+  if (S.articles.length === 0) { $('evBody').innerHTML = 'Aucun article chargé.'; return; }
+  const now = new Date();
+  const heure = now.getHours();
+  let salut = heure < 12 ? 'Bonjour' : heure < 18 ? 'Bon après-midi' : 'Bonsoir';
+  const parSource = {};
+  getActiveFeeds().forEach(f => parSource[f.name] = 0);
+  S.articles.forEach(a => { if (parSource[a.source] !== undefined) parSource[a.source]++; });
+  const alertes = S.articles.filter(isAlert);
+  const marquant = alertes.length > 0 ? alertes[0] : S.articles[0];
+  const autres = S.articles.filter(a => a.guid !== marquant.guid).slice(0, 3);
+  const motsCles = {};
+  const stop = new Set(['le','la','les','de','du','des','un','une','et','en','à','au','aux','pour','par','sur','avec','dans','qui','que','son','ses','est','sont','pas','plus','ce','cette','il','elle','on','nous','vous','ils','elles','se','sa','ou','d','l','s','n','c','j','y','a','été','être','avoir','fait','faire','peut','tout','même','aussi','très','bien','mais','car','entre','comme','sans','selon','après','encore','dont','autre','autres','via','deux','trois','sous','non','donc','cet','ces','comment','pourquoi','leur','leurs','nos','mon','chez','vers','lors','déjà','fois','tous','toute','toutes']);
+  S.articles.forEach(a => {
+    (a.title || '').toLowerCase().replace(/[^a-zàâäéèêëïîôùûüÿçœæ\s-]/g, '').split(/\s+/).forEach(m => {
+      if (m.length > 3 && !stop.has(m)) motsCles[m] = (motsCles[m] || 0) + 1;
+    });
+  });
+  const tendances = Object.entries(motsCles).filter(([_,c]) => c >= 2).sort((a,b) => b[1]-a[1]).slice(0,5).map(([m]) => m);
+  const tips = [
+    "Testez un outil IA mentionné dans les articles du jour.",
+    "Prenez 10 min pour lire en détail l'article qui vous intrigue le plus.",
+    "Partagez un article avec un collègue !",
+    "Créez une alerte sur un mot-clé tendance du jour.",
+    "Testez un prompt créatif en vous inspirant des sujets du jour.",
+    "Ajoutez en favoris les articles à relire plus tard.",
+    "Résumez un article en 3 points pour entraîner votre synthèse."
+  ];
+  const descM = stripHtml(marquant.description);
+  const extM = descM.length > 150 ? descM.substring(0,150) + '…' : descM;
+  let h = `<h3>🔥 Fait marquant</h3>`;
+  h += `<strong><a href="${marquant.link}" target="_blank" style="color:#8EAADC;text-decoration:underline">${marquant.title}</a></strong>`;
+  h += `<br><small style="color:#6B84B8">${marquant.source} · ${fmtDateShort(marquant.pubDate)}</small>`;
+  if (extM) h += `<br>${extM}`;
+  h += `<h3>📰 Autres événements clés</h3><ul>`;
+  autres.forEach(a => { h += `<li><a href="${a.link}" target="_blank" style="color:#C8D6EE">${a.title}</a> <small style="color:#6B84B8">— ${a.source}</small></li>`; });
+  h += `</ul>`;
+  if (tendances.length > 0) h += `<h3>📊 Tendances</h3><p>Mots-clés : <strong>${tendances.join('</strong>, <strong>')}</strong></p>`;
+  if (alertes.length > 0) h += `<h3>🔔 Alertes</h3><p>${alertes.length} article${alertes.length>1?'s':''} contenant vos mots-clés.</p>`;
+  h += `<h3>💡 Tip</h3><p>${tips[now.getDate() % tips.length]}</p>`;
+  const srcList = Object.entries(parSource).filter(([_,c])=>c>0).map(([n,c])=>`${n} (${c})`).join(', ');
+  h += `<p style="margin-top:10px;font-size:12px;color:#6B84B8">${S.articles.length} articles — ${srcList}</p>`;
+  h += `<p class="sign">${salut} Léo et Déborah ! Bonne veille 🌙</p>`;
+  $('evBody').innerHTML = h;
+  $('evTs').textContent = `Généré le ${now.toLocaleString('fr-FR')}`;
+}
+
+// Render
+function renderStatuses() {
+  const feeds = getActiveFeeds();
+  $('srcStatuses').innerHTML = feeds.map(f => {
+    const st = S.statuses[f.name] || 'loading';
+    let extra = '';
+    if (st === 'error') extra = `<span class="err-msg">${S.errors[f.name]||'erreur'}</span><button class="btn-retry" onclick="retryFeed('${f.name}')">↻</button>`;
+    else if (st === 'ok') extra = `<span class="via">${S.errors[f.name]||'ok'}</span>`;
+    return `<div class="src-s"><span class="dot ${st}"></span>${f.name} ${extra}</div>`;
+  }).join('');
+}
+
+function renderEvening() {
+  const ev = $('evening');
+  if (S.evCollapsed) { ev.classList.add('collapsed'); $('evToggle').textContent = 'Afficher'; }
+  else { ev.classList.remove('collapsed'); $('evToggle').textContent = 'Réduire'; }
+}
+function toggleEvening() {
+  S.evCollapsed = !S.evCollapsed;
+  renderEvening();
+  if (!S.evCollapsed && !S.evGenerated && S.articles.length > 0) {
+    S.evGenerated = true;
+    generateEvening();
+  }
+}
+
+function renderStats() { /* stats intégrées dans les onglets nav */ }
+
+function renderKeywords() {
+  $('kwTags').innerHTML = S.keywords.map(k =>
+    `<span class="kw-tag">${k}<button onclick="removeKeyword('${k.replace(/'/g,"\\'")}')">×</button></span>`
+  ).join('');
+}
+function addKeyword() {
+  const inp = $('kwInput'), v = inp.value.trim();
+  if (v && !S.keywords.includes(v)) {
+    S.keywords.push(v); localStorage.setItem('keywords', JSON.stringify(S.keywords));
+    inp.value = '';
+    S.tab = 'alerts';
+    renderKeywords(); renderNav(); renderArticles(); renderStats(); if (S.evGenerated) generateEvening();
+    const count = S.articles.filter(isAlert).length;
+    toast(`"${v}" ajouté — ${count} alerte${count > 1 ? 's' : ''} trouvée${count > 1 ? 's' : ''}`);
+  }
+}
+function removeKeyword(k) {
+  S.keywords = S.keywords.filter(x => x !== k);
+  localStorage.setItem('keywords', JSON.stringify(S.keywords));
+  S.tab = 'alerts';
+  renderKeywords(); renderNav(); renderArticles(); renderStats(); if (S.evGenerated) generateEvening();
+}
+
+function renderNav() {
+  const favs = pGet('favorites').length, reads = pGet('read').length, toreads = pGet('toread').length;
+  const alerts = S.articles.filter(isAlert).length;
+  const msgs = S.articles.filter(a => hasAnyMsgs(a.guid)).length;
+  const tabs = [
+    {id:'all',label:'Toutes',count:S.articles.length},
+    {id:'alerts',label:'Alertes',count:alerts},
+    {id:'toread',label:'À lire',count:toreads},
+    {id:'favorites',label:'Favoris',count:favs},
+    {id:'read',label:'Lus',count:reads},
+    {id:'messages',label:'Messages',count:msgs}
+  ];
+  $('navTabs').innerHTML = tabs.map(t =>
+    `<button class="nav-tab${S.tab===t.id?' active':''}" onclick="setTab('${t.id}')">${t.label}<span class="badge">${t.count}</span></button>`
+  ).join('');
+  const feeds = getActiveFeeds();
+  const sources = [{name:'Tout',id:'all',color:'#666'},...feeds.map(f=>({name:f.name,id:f.name,color:f.color}))];
+  $('srcFilters').innerHTML = sources.map(s =>
+    `<button class="src-f${S.source===s.id?' active':''}" style="${S.source===s.id?'background:'+s.color+';border-color:'+s.color+';color:#fff':''}" onclick="setSource('${s.id}')">${s.name}</button>`
+  ).join('');
+}
+
+function setTab(t) { S.tab = t; renderNav(); renderArticles(); }
+function setSource(s) { S.source = s; renderNav(); renderArticles(); }
+
+function getFiltered() {
+  let arts = S.articles;
+  if (S.source !== 'all') arts = arts.filter(a => a.source === S.source);
+  const favs = pGet('favorites'), reads = pGet('read'), toreads = pGet('toread');
+  switch (S.tab) {
+    case 'alerts': return arts.filter(isAlert);
+    case 'toread': return arts.filter(a => toreads.includes(a.guid));
+    case 'favorites': return arts.filter(a => favs.includes(a.guid));
+    case 'read': return arts.filter(a => reads.includes(a.guid));
+    case 'messages': return arts.filter(a => hasAnyMsgs(a.guid));
+    default: return arts;
+  }
+}
+
+function renderArticles() {
+  const arts = getFiltered(), grid = $('grid');
+  if (arts.length === 0) {
+    grid.innerHTML = '<div class="empty-state"><div class="em">📭</div><div>Aucun article ici</div></div>';
+    return;
+  }
+  const favs = pGet('favorites'), reads = pGet('read'), toreads = pGet('toread'), notes = pGet('notes');
+  grid.innerHTML = arts.map(a => {
+    const id = gkey(a.guid);
+    const isFav = favs.includes(a.guid), isRead = reads.includes(a.guid), isToread = toreads.includes(a.guid);
+    const alert = isAlert(a), msgs = getMsgs(a.guid), note = notes[a.guid] || '';
+    const threadOpen = S.openThreads.has(a.guid), noteOpen = S.openNotes.has(a.guid);
+    let cls = 'card';
+    if (isFav) cls += ' is-fav';
+    if (isToread) cls += ' is-toread';
+    if (isRead) cls += ' is-read';
+    if (alert && !isRead) cls += ' is-alert';
+    const desc = stripHtml(a.description);
+    const excerpt = desc.length > 200 ? desc.substring(0,200)+'…' : desc;
+    const g = a.guid.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return `<div class="${cls}" id="c-${id}">
+      <div class="card-top">
+        <span class="src-badge" style="background:${a.sourceColor}">${a.source}</span>
+        ${alert ? '<span class="alert-badge">Alerte</span>' : ''}
+        ${isRead ? '<span class="read-badge">Lu</span>' : ''}
+      </div>
+      <div class="card-title"><a href="${a.link}" target="_blank" rel="noopener">${a.title}</a></div>
+      <div class="card-date">${fmtDate(a.pubDate)} <span class="rel">${relTime(a.pubDate)}</span></div>
+      ${excerpt ? `<div class="card-desc">${excerpt}</div>` : ''}
+      ${note && !noteOpen ? `<div class="note-preview" onclick="toggleNote('${g}')">📝 ${note.length>80?note.substring(0,80)+'…':note}</div>` : ''}
+      <div class="card-actions">
+        <button class="act-btn${isFav?' on-fav':''}" onclick="toggleFav('${g}')">⭐</button>
+        <button class="act-btn${isToread?' on-toread':''}" onclick="toggleToread('${g}')">📌</button>
+        <button class="act-btn${isRead?' on-read':''}" onclick="toggleRead('${g}')">✓${isRead?' Lu':''}</button>
+        <button class="act-btn${msgs.length?' has-msg':''}" onclick="toggleThread('${g}')">💬${msgs.length?' '+msgs.length:''}</button>
+        <button class="act-btn" onclick="shareArticle('${g}')">↗ Partager</button>
+        <button class="act-btn" onclick="toggleNote('${g}')">📝 Note</button>
+      </div>
+      <div class="note-area${noteOpen?' open':''}" id="na-${id}">
+        <textarea placeholder="Votre note personnelle..." onblur="saveNote('${g}',this.value)">${note}</textarea>
+      </div>
+      <div class="thread${threadOpen?' open':''}" id="th-${id}">
+        <div class="thread-msgs" id="tm-${id}">
+          ${msgs.map(m => `<div class="msg-bubble ${m.profile}"><div class="msg-meta"><span class="msg-author">${m.profile==='leo'?'Léo':'Déborah'}</span> · ${relTime(new Date(m.ts).toISOString())}</div>${escHtml(m.text)}</div>`).join('')}
+        </div>
+        <div class="thread-input">
+          <input type="text" id="ti-${id}" placeholder="Écrire un message..." onkeydown="if(event.key==='Enter')sendMsg('${g}','ti-${id}')" />
+          <button class="${S.profile}" onclick="sendMsg('${g}','ti-${id}')">Envoyer</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  S.openThreads.forEach(guid => {
+    const el = document.getElementById('tm-' + gkey(guid));
+    if (el) el.scrollTop = el.scrollHeight;
+  });
+}
+
+// Actions
+function toggleFav(guid) { toggleList('favorites', guid); renderArticles(); renderNav(); renderStats(); }
+function toggleToread(guid) { toggleList('toread', guid); renderArticles(); renderNav(); renderStats(); }
+function toggleRead(guid) { toggleList('read', guid); renderArticles(); renderNav(); renderStats(); }
+function toggleThread(guid) { S.openThreads.has(guid) ? S.openThreads.delete(guid) : S.openThreads.add(guid); renderArticles(); }
+function toggleNote(guid) { S.openNotes.has(guid) ? S.openNotes.delete(guid) : S.openNotes.add(guid); renderArticles(); }
+function saveNote(guid, text) {
+  const notes = pGet('notes');
+  if (text.trim()) notes[guid] = text.trim(); else delete notes[guid];
+  pSet('notes', notes);
+}
+function sendMsg(guid, inputId) {
+  const inp = document.getElementById(inputId); if (!inp) return;
+  const text = inp.value.trim(); if (!text) return;
+  const msgs = getMsgs(guid);
+  msgs.push({ profile: S.profile, text, ts: Date.now() });
+  setMsgs(guid, msgs); inp.value = '';
+  renderArticles(); renderNav(); renderStats();
+}
+function shareArticle(guid) {
+  const a = S.articles.find(x => x.guid === guid); if (!a) return;
+  const note = pGet('notes')[guid];
+  let text = `${a.title}\n📅 ${fmtDate(a.pubDate)}\n🔗 ${a.link}`;
+  if (note) text += `\n📝 ${note}`;
+  text += '\n\n— Léo & Déborah';
+  navigator.clipboard.writeText(text).then(() => toast('Copié !')).catch(() => toast('Erreur'));
+}
+function switchProfile(p) {
+  S.profile = p; localStorage.setItem('profile', p);
+  document.querySelectorAll('.prof-btn').forEach(b => b.classList.toggle('active', b.dataset.p === p));
+  renderArticles(); renderNav(); renderStats();
+}
+
+function init() {
+  switchProfile(S.profile);
+  updateFeedBadge();
+  renderStatuses(); renderKeywords(); renderNav(); renderStats(); renderEvening();
+  // Ouvrir la modale sources au démarrage
+  openPanel();
+}
+init();
+</script>
+</body>
+</html>

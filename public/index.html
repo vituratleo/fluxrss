@@ -643,7 +643,29 @@ async function syncAllData() {
   updateFeedBadge(); renderArticles(); renderNav(); renderStats();
 }
 function getMsgs(guid) { return JSON.parse(localStorage.getItem('m_' + gkey(guid)) || '[]'); }
-function setMsgs(guid, msgs) { localStorage.setItem('m_' + gkey(guid), JSON.stringify(msgs)); }
+function setMsgs(guid, msgs) {
+  const key = gkey(guid);
+  localStorage.setItem('m_' + key, JSON.stringify(msgs));
+  fetch(`/api/data?profile=shared&key=msg_${key}`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ value: msgs })
+  }).catch(() => {});
+}
+async function syncMsgs() {
+  // Sync les messages d'articles depuis le serveur
+  for (const a of S.articles) {
+    const key = gkey(a.guid);
+    try {
+      const r = await fetch(`/api/data?profile=shared&key=msg_${key}`);
+      if (r.ok) {
+        const msgs = await r.json();
+        if (Array.isArray(msgs) && msgs.length > 0) {
+          localStorage.setItem('m_' + key, JSON.stringify(msgs));
+        }
+      }
+    } catch(e) {}
+  }
+}
 function hasAnyMsgs(guid) { return getMsgs(guid).length > 0; }
 function toggleList(key, guid) {
   const list = pGet(key); const idx = list.indexOf(guid);
@@ -735,6 +757,9 @@ async function loadAll() {
     S.articles = [...S.articles, ...items].sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
     renderArticles(); renderNav(); renderStats();
   }
+  // Sync messages d'articles depuis le serveur
+  await syncMsgs();
+  renderArticles(); renderNav(); renderStats();
 }
 
 // Résumé du soir

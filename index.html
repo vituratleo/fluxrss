@@ -64,12 +64,12 @@ button{font-family:inherit;cursor:pointer}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 
 /* EVENING */
-.evening{background:var(--evening-bg);color:#D4DFEE;padding:0 24px;overflow:hidden}
+.evening{background:linear-gradient(135deg,#1a1035 0%,#0d1f3c 50%,#162447 100%);color:#D4DFEE;padding:0 24px;overflow:hidden;border-top:2px solid rgba(142,170,220,0.2);border-bottom:2px solid rgba(142,170,220,0.2);margin:16px 0;border-radius:16px;max-width:1200px;margin:16px auto;box-shadow:0 4px 24px rgba(0,0,0,0.2)}
 .evening.collapsed .ev-body{display:none}
-.ev-in{max-width:1200px;margin:0 auto;padding:20px 0}
-.ev-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.ev-title{font-size:16px;font-weight:700;color:#8EAADC;display:flex;align-items:center;gap:8px}
-.ev-ts{font-size:12px;color:#6B84B8;margin-top:2px}
+.ev-in{max-width:1200px;margin:0 auto;padding:24px 0}
+.ev-head{display:flex;flex-direction:column;align-items:center;gap:8px}
+.ev-title{font-size:20px;font-weight:800;color:#8EAADC;display:flex;align-items:center;gap:10px;letter-spacing:-0.3px}
+.ev-ts{font-size:12px;color:#6B84B8;text-align:center}
 .btn-tog{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#8EAADC;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;transition:all var(--transition)}
 .btn-tog:hover{background:rgba(255,255,255,0.15)}
 .ev-body{font-size:14px;line-height:1.8;color:#C8D6EE;margin-top:14px}
@@ -295,11 +295,9 @@ button{font-family:inherit;cursor:pointer}
 <div class="evening" id="evening">
   <div class="ev-in">
     <div class="ev-head">
-      <div>
-        <div class="ev-title">🌙 Résumé du soir</div>
-        <div class="ev-ts" id="evTs"></div>
-      </div>
-      <button class="btn-tog" id="evToggle" onclick="toggleEvening()">Réduire</button>
+      <div class="ev-title">🌙 Résumé du soir</div>
+      <div class="ev-ts" id="evTs"></div>
+      <button class="btn-tog" id="evToggle" onclick="toggleEvening()" style="margin-top:4px">Réduire</button>
     </div>
     <div class="ev-body" id="evBody">
       <div class="ld-dots"><span></span><span></span><span></span></div> Chargement...

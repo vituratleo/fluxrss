@@ -723,11 +723,14 @@ function generateEvening() {
 // Render
 function renderStatuses() {
   const feeds = getActiveFeeds();
-  $('srcStatuses').innerHTML = feeds.map(f => {
+  const visible = feeds.filter(f => {
+    const st = S.statuses[f.name] || 'loading';
+    return st !== 'ok';
+  });
+  $('srcStatuses').innerHTML = visible.map(f => {
     const st = S.statuses[f.name] || 'loading';
     let extra = '';
     if (st === 'error') extra = `<span class="err-msg">${S.errors[f.name]||'erreur'}</span><button class="btn-retry" onclick="retryFeed('${f.name}')">↻</button>`;
-    else if (st === 'ok') extra = `<span class="via">${S.errors[f.name]||'ok'}</span>`;
     return `<div class="src-s"><span class="dot ${st}"></span>${f.name} ${extra}</div>`;
   }).join('');
 }

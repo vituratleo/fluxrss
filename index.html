@@ -628,9 +628,12 @@ async function fetchRSS(feed) {
     source: feed.name,
     sourceColor: feed.color
   }));
-  // Traduire les titres anglais en français
+  // Traduire les titres et descriptions en français
   await Promise.all(items.map(async (it) => {
-    it.title = await translateTitle(it.title);
+    [it.title, it.description] = await Promise.all([
+      translateTitle(it.title),
+      translateTitle(it.description)
+    ]);
   }));
   return items;
 }

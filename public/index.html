@@ -403,7 +403,8 @@ let S = {
   evGenerated: false,
   keywords: JSON.parse(localStorage.getItem('keywords') || '["Claude","Anthropic","GPT","Gemini","Mistral","LLM","OpenAI","Meta AI"]'),
   openThreads: new Set(),
-  openNotes: new Set()
+  openNotes: new Set(),
+  chatInterval: null
 };
 
 // ===== FEEDS SELECTION (localStorage par profil) =====
@@ -414,12 +415,20 @@ function getActiveFeeds() {
 }
 function saveActiveFeeds(feeds) {
   localStorage.setItem(`${S.profile}_active_feeds`, JSON.stringify(feeds));
+  fetch(`/api/data?profile=${S.profile}&key=active_feeds`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ value: feeds })
+  }).catch(() => {});
 }
 function getCustomFeeds() {
   return JSON.parse(localStorage.getItem(`${S.profile}_custom_feeds`) || '[]');
 }
 function saveCustomFeeds(feeds) {
   localStorage.setItem(`${S.profile}_custom_feeds`, JSON.stringify(feeds));
+  fetch(`/api/data?profile=${S.profile}&key=custom_feeds`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ value: feeds })
+  }).catch(() => {});
 }
 
 function isActive(url) {
@@ -612,7 +621,27 @@ function toast(msg) {
 
 // LocalStorage
 function pGet(key) { return JSON.parse(localStorage.getItem(`${S.profile}_${key}`) || (key === 'notes' ? '{}' : '[]')); }
-function pSet(key, val) { localStorage.setItem(`${S.profile}_${key}`, JSON.stringify(val)); }
+function pSet(key, val) {
+  localStorage.setItem(`${S.profile}_${key}`, JSON.stringify(val));
+  // Sync vers le serveur en arrière-plan
+  fetch(`/api/data?profile=${S.profile}&key=${key}`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ value: val })
+  }).catch(() => {});
+}
+async function pSync(key) {
+  try {
+    const r = await fetch(`/api/data?profile=${S.profile}&key=${key}`);
+    const data = await r.json();
+    if (data && (Array.isArray(data) ? data.length > 0 : Object.keys(data).length > 0)) {
+      localStorage.setItem(`${S.profile}_${key}`, JSON.stringify(data));
+    }
+  } catch(e) {}
+}
+async function syncAllData() {
+  await Promise.all(['favorites','read','toread','notes','active_feeds','custom_feeds'].map(k => pSync(k)));
+  updateFeedBadge(); renderArticles(); renderNav(); renderStats();
+}
 function getMsgs(guid) { return JSON.parse(localStorage.getItem('m_' + gkey(guid)) || '[]'); }
 function setMsgs(guid, msgs) { localStorage.setItem('m_' + gkey(guid), JSON.stringify(msgs)); }
 function hasAnyMsgs(guid) { return getMsgs(guid).length > 0; }
@@ -942,18 +971,36 @@ function shareArticle(guid) {
 }
 // ===== CHAT =====
 function getChatMsgs() { return JSON.parse(localStorage.getItem('chat_messages') || '[]'); }
-function saveChatMsgs(msgs) { localStorage.setItem('chat_messages', JSON.stringify(msgs)); }
 
-function openChat() {
+async function fetchChatMsgs() {
+  try {
+    const r = await fetch('/api/chat');
+    const msgs = await r.json();
+    localStorage.setItem('chat_messages', JSON.stringify(msgs));
+    return msgs;
+  } catch(e) { return getChatMsgs(); }
+}
+
+async function openChat() {
   $('chatOverlay').classList.add('open');
   $('chatPanel').classList.add('open');
   $('chatSendBtn').className = S.profile;
+  $('chatMsgs').innerHTML = '<div class="chat-empty">Chargement...</div>';
+  await fetchChatMsgs();
   renderChat();
   markChatRead();
+  // Rafraîchir les messages toutes les 5 secondes
+  if (S.chatInterval) clearInterval(S.chatInterval);
+  S.chatInterval = setInterval(async () => {
+    await fetchChatMsgs();
+    renderChat();
+    updateChatUnread();
+  }, 5000);
 }
 function closeChat() {
   $('chatOverlay').classList.remove('open');
   $('chatPanel').classList.remove('open');
+  if (S.chatInterval) { clearInterval(S.chatInterval); S.chatInterval = null; }
 }
 function renderChat() {
   const msgs = getChatMsgs();
@@ -968,14 +1015,20 @@ function renderChat() {
   }).join('');
   $('chatMsgs').scrollTop = $('chatMsgs').scrollHeight;
 }
-function sendChat() {
+async function sendChat() {
   const text = $('chatInput').value.trim();
   if (!text) return;
+  $('chatInput').value = '';
+  // Afficher immédiatement en local
   const msgs = getChatMsgs();
   msgs.push({ profile: S.profile, text, ts: Date.now() });
-  saveChatMsgs(msgs);
-  $('chatInput').value = '';
+  localStorage.setItem('chat_messages', JSON.stringify(msgs));
   renderChat();
+  // Envoyer au serveur
+  await fetch('/api/chat', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ profile: S.profile, text })
+  }).catch(() => {});
   updateChatUnread();
 }
 function markChatRead() {
@@ -1009,11 +1062,13 @@ function shareByMail(guid) {
   window.open(`mailto:?subject=${subject}&body=${encodeURIComponent(body)}`);
 }
 
-function init() {
+async function init() {
   switchProfile(S.profile);
   updateFeedBadge();
   renderStatuses(); renderKeywords(); renderNav(); renderStats(); renderEvening();
   updateChatUnread();
+  // Sync données depuis le serveur
+  await syncAllData();
   openPanel();
 }
 init();

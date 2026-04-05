@@ -609,15 +609,10 @@ function looksEnglish(text) {
 async function translateTitle(title) {
   if (!looksEnglish(title)) return title;
   try {
-    const r = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(title)}&langpair=en|fr`);
+    const r = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=fr&dt=t&q=${encodeURIComponent(title)}`);
     const d = await r.json();
-    if (d.responseStatus === 200 && d.responseData.translatedText) {
-      let t = d.responseData.translatedText;
-      // MyMemory renvoie parfois en MAJUSCULES, on corrige
-      if (t === t.toUpperCase() && t.length > 10) {
-        t = t.charAt(0) + t.slice(1).toLowerCase();
-      }
-      return t;
+    if (d && d[0] && d[0][0] && d[0][0][0]) {
+      return d[0][0][0];
     }
   } catch(e) {}
   return title;

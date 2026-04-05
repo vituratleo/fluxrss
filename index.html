@@ -301,10 +301,9 @@ button{font-family:inherit;cursor:pointer}
     <div class="ev-head">
       <div class="ev-title">🌙 Résumé du soir</div>
       <div class="ev-ts" id="evTs"></div>
-      <button class="btn-tog" id="evToggle" onclick="toggleEvening()" style="margin-top:4px">Réduire</button>
+      <button class="btn-tog" id="evToggle" onclick="toggleEvening()" style="margin-top:4px"></button>
     </div>
     <div class="ev-body" id="evBody">
-      <div class="ld-dots"><span></span><span></span><span></span></div> Chargement...
     </div>
   </div>
 </div>
@@ -736,8 +735,8 @@ function renderStatuses() {
 
 function renderEvening() {
   const ev = $('evening');
-  if (S.evCollapsed) { ev.classList.add('collapsed'); $('evToggle').textContent = 'Afficher'; }
-  else { ev.classList.remove('collapsed'); $('evToggle').textContent = 'Réduire'; }
+  if (S.evCollapsed) { ev.classList.add('collapsed'); $('evToggle').textContent = '▼'; }
+  else { ev.classList.remove('collapsed'); $('evToggle').textContent = '▲'; }
 }
 function toggleEvening() {
   S.evCollapsed = !S.evCollapsed;

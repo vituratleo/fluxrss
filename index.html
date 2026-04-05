@@ -598,6 +598,31 @@ function isAlert(a) {
   return S.keywords.some(k => t.includes(k.toLowerCase()));
 }
 
+// Traduction EN->FR
+function looksEnglish(text) {
+  const en = /\b(the|is|are|was|were|have|has|had|will|would|could|should|can|do|does|did|been|being|with|that|this|from|for|not|but|what|all|were|when|your|how|its|into|about|than|them|then|some|her|him|other|which|their|there|these|more|also|after|over|such|our|any|most|only|very|just|may|new|one|like|out|who|get|make|know|use|find|here|thing|many|well|way|look|day|going|want|say|each|made|before|upon|between|through|during|without|again|off|might|still|much|why|must|where|every|under|need|using|open|another|while|next|both|few|those|because|first|even|long|last|since|come|back|right|good|been|own|down|should|now|same|help|take|turn|keep|point|large|small|work|part|case|give|place|high|around|house|world|went|until|along|left|hand|thought|away|great|old|year|found|tell|came|done|called|enough|sure|stop|among|watch|start|face|times|never|seen|however|different|country|seem|might|asked|below|above|below)\b/gi;
+  const matches = text.match(en) || [];
+  const words = text.split(/\s+/).length;
+  return words >= 3 && (matches.length / words) > 0.2;
+}
+
+async function translateTitle(title) {
+  if (!looksEnglish(title)) return title;
+  try {
+    const r = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(title)}&langpair=en|fr`);
+    const d = await r.json();
+    if (d.responseStatus === 200 && d.responseData.translatedText) {
+      let t = d.responseData.translatedText;
+      // MyMemory renvoie parfois en MAJUSCULES, on corrige
+      if (t === t.toUpperCase() && t.length > 10) {
+        t = t.charAt(0) + t.slice(1).toLowerCase();
+      }
+      return t;
+    }
+  } catch(e) {}
+  return title;
+}
+
 // RSS via rss2json
 async function fetchRSS(feed) {
   const url = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed.url)}`;
@@ -605,7 +630,7 @@ async function fetchRSS(feed) {
   if (!r.ok) throw new Error('HTTP ' + r.status);
   const d = await r.json();
   if (d.status !== 'ok') throw new Error(d.message || 'Erreur flux');
-  return (d.items || []).slice(0, 6).map(it => ({
+  const items = (d.items || []).slice(0, 6).map(it => ({
     title: it.title || 'Sans titre',
     link: it.link || '#',
     pubDate: it.pubDate || '',
@@ -614,6 +639,11 @@ async function fetchRSS(feed) {
     source: feed.name,
     sourceColor: feed.color
   }));
+  // Traduire les titres anglais en français
+  await Promise.all(items.map(async (it) => {
+    it.title = await translateTitle(it.title);
+  }));
+  return items;
 }
 
 function delay(ms) { return new Promise(r => setTimeout(r, ms)); }

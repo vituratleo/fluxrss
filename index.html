@@ -598,23 +598,17 @@ function isAlert(a) {
   return S.keywords.some(k => t.includes(k.toLowerCase()));
 }
 
-// Traduction EN->FR
-function looksEnglish(text) {
-  const en = /\b(the|is|are|was|were|have|has|had|will|would|could|should|can|do|does|did|been|being|with|that|this|from|for|not|but|what|all|were|when|your|how|its|into|about|than|them|then|some|her|him|other|which|their|there|these|more|also|after|over|such|our|any|most|only|very|just|may|new|one|like|out|who|get|make|know|use|find|here|thing|many|well|way|look|day|going|want|say|each|made|before|upon|between|through|during|without|again|off|might|still|much|why|must|where|every|under|need|using|open|another|while|next|both|few|those|because|first|even|long|last|since|come|back|right|good|been|own|down|should|now|same|help|take|turn|keep|point|large|small|work|part|case|give|place|high|around|house|world|went|until|along|left|hand|thought|away|great|old|year|found|tell|came|done|called|enough|sure|stop|among|watch|start|face|times|never|seen|however|different|country|seem|might|asked|below|above|below)\b/gi;
-  const matches = text.match(en) || [];
-  const words = text.split(/\s+/).length;
-  return words >= 3 && (matches.length / words) > 0.2;
-}
-
+// Traduction auto -> FR
 async function translateTitle(title) {
-  if (!looksEnglish(title)) return title;
   try {
-    const r = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=fr&dt=t&q=${encodeURIComponent(title)}`);
+    const r = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=fr&dt=t&q=${encodeURIComponent(title)}`);
     const d = await r.json();
-    if (d && d[0] && d[0][0] && d[0][0][0]) {
-      return d[0][0][0];
+    // d[2] contient la langue détectée (ex: "en", "fr")
+    if (d && d[2] && d[2] === 'fr') return title;
+    if (d && d[0]) {
+      return d[0].map(s => s[0]).join('');
     }
-  } catch(e) {}
+  } catch(e) { console.warn('Traduction échouée:', e); }
   return title;
 }
 

@@ -671,7 +671,6 @@ async function loadAll() {
     S.articles = [...S.articles, ...items].sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
     renderArticles(); renderNav(); renderStats();
   }
-  if (S.articles.length > 0) { S.evGenerated = true; generateEvening(); }
 }
 
 // Résumé du soir

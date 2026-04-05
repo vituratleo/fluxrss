@@ -723,16 +723,21 @@ function generateEvening() {
 // Render
 function renderStatuses() {
   const feeds = getActiveFeeds();
-  const visible = feeds.filter(f => {
-    const st = S.statuses[f.name] || 'loading';
-    return st !== 'ok';
-  });
-  $('srcStatuses').innerHTML = visible.map(f => {
+  const loading = feeds.filter(f => (S.statuses[f.name] || 'loading') !== 'ok');
+  const ok = feeds.filter(f => S.statuses[f.name] === 'ok');
+  let html = loading.map(f => {
     const st = S.statuses[f.name] || 'loading';
     let extra = '';
     if (st === 'error') extra = `<span class="err-msg">${S.errors[f.name]||'erreur'}</span><button class="btn-retry" onclick="retryFeed('${f.name}')">↻</button>`;
     return `<div class="src-s"><span class="dot ${st}"></span>${f.name} ${extra}</div>`;
   }).join('');
+  if (ok.length > 0) {
+    html += `<div class="src-s" style="cursor:pointer" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'flex':'none'"><span class="dot ok"></span><strong>${ok.length} source${ok.length>1?'s':''} ✓</strong></div>`;
+    html += `<div class="src-ok-detail" style="display:none;flex-wrap:wrap;gap:10px">`;
+    html += ok.map(f => `<div class="src-s"><span class="dot ok"></span>${f.name} <span class="via">${S.errors[f.name]||'ok'}</span></div>`).join('');
+    html += `</div>`;
+  }
+  $('srcStatuses').innerHTML = html;
 }
 
 function renderEvening() {

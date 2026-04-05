@@ -538,8 +538,8 @@ function renderPanel() {
   </div>`;
 
   let html = `<div class="panel-grid">${grid}</div>`;
-  html += `<div style="padding:16px 0 4px;border-top:1px solid var(--border);display:flex;justify-content:center;flex-shrink:0">
-    <button class="btn-ref" style="max-width:400px;width:100%;justify-content:center;font-size:15px;padding:14px" onclick="closePanel();loadAll()">↻ Appliquer et recharger</button>
+  html += `<div style="padding:16px 0 4px;border-top:1px solid var(--border);flex-shrink:0">
+    <button class="btn-ref" style="width:100%;justify-content:center;font-size:15px;padding:14px" onclick="closePanel();loadAll()">↻ Appliquer et recharger</button>
   </div>`;
 
   $('panelBody').innerHTML = html;

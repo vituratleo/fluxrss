@@ -975,10 +975,14 @@ function getChatMsgs() { return JSON.parse(localStorage.getItem('chat_messages')
 async function fetchChatMsgs() {
   try {
     const r = await fetch('/api/chat');
+    if (!r.ok) { console.error('Chat API error:', r.status, await r.text()); return getChatMsgs(); }
     const msgs = await r.json();
-    localStorage.setItem('chat_messages', JSON.stringify(msgs));
-    return msgs;
-  } catch(e) { return getChatMsgs(); }
+    if (Array.isArray(msgs)) {
+      localStorage.setItem('chat_messages', JSON.stringify(msgs));
+      return msgs;
+    }
+    return getChatMsgs();
+  } catch(e) { console.error('Chat fetch error:', e); return getChatMsgs(); }
 }
 
 async function openChat() {
@@ -1025,10 +1029,15 @@ async function sendChat() {
   localStorage.setItem('chat_messages', JSON.stringify(msgs));
   renderChat();
   // Envoyer au serveur
-  await fetch('/api/chat', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ profile: S.profile, text })
-  }).catch(() => {});
+  try {
+    const r = await fetch('/api/chat', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ profile: S.profile, text })
+    });
+    const result = await r.json();
+    console.log('Chat send result:', result);
+    if (!r.ok) console.error('Chat send error:', result);
+  } catch(e) { console.error('Chat send failed:', e); }
   updateChatUnread();
 }
 function markChatRead() {

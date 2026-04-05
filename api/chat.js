@@ -1,4 +1,24 @@
-import { put, list, head } from '@vercel/blob';
+import { put, list, del } from '@vercel/blob';
+
+export const config = { api: { bodyParser: true } };
+
+async function readBlob(prefix) {
+  try {
+    const { blobs } = await list({ prefix });
+    if (blobs.length === 0) return null;
+    // Prendre le plus récent
+    const blob = blobs.sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt))[0];
+    const response = await fetch(blob.url, { cache: 'no-store' });
+    if (!response.ok) return null;
+    // Nettoyer les anciens blobs
+    if (blobs.length > 1) {
+      for (const old of blobs.slice(1)) {
+        try { await del(old.url); } catch(e) {}
+      }
+    }
+    return await response.json();
+  } catch(e) { return null; }
+}
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -6,50 +26,30 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const BLOB_KEY = 'chat/messages.json';
-
   try {
     if (req.method === 'GET') {
-      // Lire les messages
-      const { blobs } = await list({ prefix: 'chat/' });
-      const blob = blobs.find(b => b.pathname === BLOB_KEY);
-      if (!blob) return res.status(200).json([]);
-      const response = await fetch(blob.url);
-      const messages = await response.json();
-      return res.status(200).json(messages);
+      const messages = await readBlob('chat-messages');
+      return res.status(200).json(messages || []);
     }
 
     if (req.method === 'POST') {
-      // Lire les messages existants
-      let messages = [];
-      const { blobs } = await list({ prefix: 'chat/' });
-      const blob = blobs.find(b => b.pathname === BLOB_KEY);
-      if (blob) {
-        const response = await fetch(blob.url);
-        messages = await response.json();
-      }
-
-      // Ajouter le nouveau message
       const { profile, text } = req.body;
       if (!profile || !text) return res.status(400).json({ error: 'profile et text requis' });
 
+      let messages = (await readBlob('chat-messages')) || [];
       messages.push({ profile, text, ts: Date.now() });
-
-      // Garder les 500 derniers messages max
       if (messages.length > 500) messages = messages.slice(-500);
 
-      // Sauvegarder
-      await put(BLOB_KEY, JSON.stringify(messages), {
+      await put('chat-messages.json', JSON.stringify(messages), {
         access: 'public',
         contentType: 'application/json',
-        addRandomSuffix: false,
       });
 
-      return res.status(200).json({ ok: true });
+      return res.status(200).json({ ok: true, count: messages.length });
     }
 
     return res.status(405).json({ error: 'Method not allowed' });
   } catch (e) {
-    return res.status(500).json({ error: e.message });
+    return res.status(500).json({ error: e.message, stack: e.stack });
   }
 }

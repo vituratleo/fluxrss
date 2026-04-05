@@ -39,7 +39,7 @@ export default async function handler(req, res) {
       if (messages.length > 500) messages = messages.slice(-500);
 
       await put('chat-messages.json', JSON.stringify(messages), {
-        access: 'private',
+        access: 'public',
         contentType: 'application/json',
       });
 

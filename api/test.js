@@ -3,7 +3,7 @@ import { put, list } from '@vercel/blob';
 export default async function handler(req, res) {
   try {
     const blob = await put('test.json', JSON.stringify({ test: true, time: Date.now() }), {
-      access: 'private',
+      access: 'public',
       contentType: 'application/json',
     });
 

@@ -375,15 +375,8 @@ let S = {
 function getActiveFeeds() {
   const saved = localStorage.getItem('active_feeds');
   if (saved) return JSON.parse(saved);
-  // Default : les 5 sources initiales
-  return [
-    { name: 'Presse-citron', url: 'https://www.presse-citron.net/feed/', color: '#F57C00' },
-    { name: 'Blog du Modérateur', url: 'https://www.blogdumoderateur.com/ia/feed/', color: '#1565C0' },
-    { name: '01net', url: 'https://www.01net.com/actualites/feed/', color: '#E91E63' },
-    { name: 'Le Monde IA', url: 'https://www.lemonde.fr/intelligence-artificielle/rss_full.xml', color: '#004A9C' },
-    { name: 'ActuIA', url: 'https://www.actuia.com/feed/', color: '#00897B' },
-    { name: 'OpenAI', url: 'https://openai.com/blog/rss.xml', color: '#412991' }
-  ];
+  // Aucune source par défaut — l'utilisateur doit choisir
+  return [];
 }
 function saveActiveFeeds(feeds) {
   localStorage.setItem('active_feeds', JSON.stringify(feeds));
@@ -468,7 +461,10 @@ function updateFeedBadge() {
 
 // ===== PANEL RENDER =====
 function openPanel() { $('overlay').classList.add('open'); $('panel').classList.add('open'); renderPanel(); }
-function closePanel() { $('overlay').classList.remove('open'); $('panel').classList.remove('open'); }
+function closePanel() {
+  if (getActiveFeeds().length === 0) { alert('Veuillez sélectionner au moins une source.'); return; }
+  $('overlay').classList.remove('open'); $('panel').classList.remove('open');
+}
 
 function renderPanel() {
   let grid = '';

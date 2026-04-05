@@ -6,11 +6,9 @@ async function readBlob(prefix) {
   try {
     const { blobs } = await list({ prefix });
     if (blobs.length === 0) return null;
-    // Prendre le plus récent
     const blob = blobs.sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt))[0];
-    const response = await fetch(blob.url, { cache: 'no-store' });
+    const response = await fetch(blob.downloadUrl, { cache: 'no-store' });
     if (!response.ok) return null;
-    // Nettoyer les anciens blobs
     if (blobs.length > 1) {
       for (const old of blobs.slice(1)) {
         try { await del(old.url); } catch(e) {}
@@ -41,7 +39,7 @@ export default async function handler(req, res) {
       if (messages.length > 500) messages = messages.slice(-500);
 
       await put('chat-messages.json', JSON.stringify(messages), {
-        access: 'public',
+        access: 'private',
         contentType: 'application/json',
       });
 
@@ -50,6 +48,6 @@ export default async function handler(req, res) {
 
     return res.status(405).json({ error: 'Method not allowed' });
   } catch (e) {
-    return res.status(500).json({ error: e.message, stack: e.stack });
+    return res.status(500).json({ error: e.message });
   }
 }

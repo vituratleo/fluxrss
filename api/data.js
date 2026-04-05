@@ -7,7 +7,7 @@ async function readBlob(prefix) {
     const { blobs } = await list({ prefix });
     if (blobs.length === 0) return null;
     const blob = blobs.sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt))[0];
-    const response = await fetch(blob.url, { cache: 'no-store' });
+    const response = await fetch(blob.downloadUrl, { cache: 'no-store' });
     if (!response.ok) return null;
     if (blobs.length > 1) {
       for (const old of blobs.slice(1)) {
@@ -38,7 +38,7 @@ export default async function handler(req, res) {
     if (req.method === 'POST') {
       const { value } = req.body;
       await put(`${blobPrefix}.json`, JSON.stringify(value), {
-        access: 'public',
+        access: 'private',
         contentType: 'application/json',
       });
       return res.status(200).json({ ok: true });
@@ -46,6 +46,6 @@ export default async function handler(req, res) {
 
     return res.status(405).json({ error: 'Method not allowed' });
   } catch (e) {
-    return res.status(500).json({ error: e.message, stack: e.stack });
+    return res.status(500).json({ error: e.message });
   }
 }

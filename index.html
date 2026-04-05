@@ -370,21 +370,20 @@ let S = {
   openNotes: new Set()
 };
 
-// ===== FEEDS SELECTION (localStorage) =====
+// ===== FEEDS SELECTION (localStorage par profil) =====
 function getActiveFeeds() {
-  const saved = localStorage.getItem('active_feeds');
+  const saved = localStorage.getItem(`${S.profile}_active_feeds`);
   if (saved) return JSON.parse(saved);
-  // Aucune source par défaut — l'utilisateur doit choisir
   return [];
 }
 function saveActiveFeeds(feeds) {
-  localStorage.setItem('active_feeds', JSON.stringify(feeds));
+  localStorage.setItem(`${S.profile}_active_feeds`, JSON.stringify(feeds));
 }
 function getCustomFeeds() {
-  return JSON.parse(localStorage.getItem('custom_feeds') || '[]');
+  return JSON.parse(localStorage.getItem(`${S.profile}_custom_feeds`) || '[]');
 }
 function saveCustomFeeds(feeds) {
-  localStorage.setItem('custom_feeds', JSON.stringify(feeds));
+  localStorage.setItem(`${S.profile}_custom_feeds`, JSON.stringify(feeds));
 }
 
 function isActive(url) {
@@ -847,6 +846,7 @@ function renderArticles() {
         <button class="act-btn${isRead?' on-read':''}" onclick="toggleRead('${g}')">✓${isRead?' Lu':''}</button>
         <button class="act-btn${msgs.length?' has-msg':''}" onclick="toggleThread('${g}')">💬${msgs.length?' '+msgs.length:''}</button>
         <button class="act-btn" onclick="shareArticle('${g}')">↗ Partager</button>
+        <button class="act-btn" onclick="shareByMail('${g}')">✉ Mail</button>
         <button class="act-btn" onclick="toggleNote('${g}')">📝 Note</button>
       </div>
       <div class="note-area${noteOpen?' open':''}" id="na-${id}">
@@ -899,7 +899,19 @@ function shareArticle(guid) {
 function switchProfile(p) {
   S.profile = p; localStorage.setItem('profile', p);
   document.querySelectorAll('.prof-btn').forEach(b => b.classList.toggle('active', b.dataset.p === p));
+  updateFeedBadge();
   renderArticles(); renderNav(); renderStats();
+}
+
+function shareByMail(guid) {
+  const a = S.articles.find(x => x.guid === guid);
+  if (!a) return;
+  const note = pGet('notes')[guid] || '';
+  const subject = encodeURIComponent(a.title);
+  let body = `${a.title}\n\n📅 ${fmtDate(a.pubDate)}\n🔗 ${a.link}`;
+  if (note) body += `\n\n📝 Note : ${note}`;
+  body += `\n\n— Envoyé depuis Veille IA`;
+  window.open(`mailto:?subject=${subject}&body=${encodeURIComponent(body)}`);
 }
 
 function init() {

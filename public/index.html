@@ -422,20 +422,16 @@ function getActiveFeeds() {
 }
 function saveActiveFeeds(feeds) {
   localStorage.setItem(`${S.profile}_active_feeds`, JSON.stringify(feeds));
-  fetch(`/api/data?profile=${S.profile}&key=active_feeds`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ value: feeds })
-  }).catch(() => {});
+  _pendingSync[`${S.profile}|active_feeds`] = { profile: S.profile, key: 'active_feeds', value: feeds };
+  scheduleSyncPush();
 }
 function getCustomFeeds() {
   return JSON.parse(localStorage.getItem(`${S.profile}_custom_feeds`) || '[]');
 }
 function saveCustomFeeds(feeds) {
   localStorage.setItem(`${S.profile}_custom_feeds`, JSON.stringify(feeds));
-  fetch(`/api/data?profile=${S.profile}&key=custom_feeds`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ value: feeds })
-  }).catch(() => {});
+  _pendingSync[`${S.profile}|custom_feeds`] = { profile: S.profile, key: 'custom_feeds', value: feeds };
+  scheduleSyncPush();
 }
 
 function isActive(url) {
@@ -626,16 +622,36 @@ function toast(msg) {
   setTimeout(() => t.classList.remove('show'), 2200);
 }
 
-// LocalStorage
+// LocalStorage + Sync debounced
+const _pendingSync = {};
+let _syncTimer = null;
+
 function pGet(key) { return JSON.parse(localStorage.getItem(`${S.profile}_${key}`) || (key === 'notes' ? '{}' : '[]')); }
 function pSet(key, val) {
   localStorage.setItem(`${S.profile}_${key}`, JSON.stringify(val));
-  // Sync vers le serveur en arrière-plan
-  fetch(`/api/data?profile=${S.profile}&key=${key}`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ value: val })
-  }).catch(() => {});
+  _pendingSync[`${S.profile}|${key}`] = { profile: S.profile, key, value: val };
+  scheduleSyncPush();
 }
+function scheduleSyncPush() {
+  if (_syncTimer) return;
+  _syncTimer = setTimeout(flushSync, 10000);
+}
+async function flushSync() {
+  _syncTimer = null;
+  const entries = Object.values(_pendingSync);
+  for (const k in _pendingSync) delete _pendingSync[k];
+  for (const e of entries) {
+    try {
+      await fetch(`/api/data?profile=${e.profile}&key=${e.key}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ value: e.value })
+      });
+    } catch(err) {}
+  }
+}
+// Flush avant fermeture de page
+window.addEventListener('beforeunload', () => { if (Object.keys(_pendingSync).length > 0) flushSync(); });
+
 async function pSync(key) {
   try {
     const r = await fetch(`/api/data?profile=${S.profile}&key=${key}`);
@@ -653,10 +669,8 @@ function getMsgs(guid) { return JSON.parse(localStorage.getItem('m_' + gkey(guid
 function setMsgs(guid, msgs) {
   const key = gkey(guid);
   localStorage.setItem('m_' + key, JSON.stringify(msgs));
-  fetch(`/api/data?profile=shared&key=msg_${key}`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ value: msgs })
-  }).catch(() => {});
+  _pendingSync[`shared|msg_${key}`] = { profile: 'shared', key: `msg_${key}`, value: msgs };
+  scheduleSyncPush();
 }
 async function syncMsgs() {
   // Sync les messages d'articles depuis le serveur

@@ -790,20 +790,106 @@ function generateEvening() {
   const now = new Date();
   const heure = now.getHours();
   let salut = heure < 12 ? 'Bonjour' : heure < 18 ? 'Bon après-midi' : 'Bonsoir';
+
+  // Stats par source
   const parSource = {};
   getActiveFeeds().forEach(f => parSource[f.name] = 0);
   S.articles.forEach(a => { if (parSource[a.source] !== undefined) parSource[a.source]++; });
+
+  // Alertes
   const alertes = S.articles.filter(isAlert);
-  const marquant = alertes.length > 0 ? alertes[0] : S.articles[0];
-  const autres = S.articles.filter(a => a.guid !== marquant.guid).slice(0, 3);
+
+  // Tendances mots-clés
   const motsCles = {};
-  const stop = new Set(['le','la','les','de','du','des','un','une','et','en','à','au','aux','pour','par','sur','avec','dans','qui','que','son','ses','est','sont','pas','plus','ce','cette','il','elle','on','nous','vous','ils','elles','se','sa','ou','d','l','s','n','c','j','y','a','été','être','avoir','fait','faire','peut','tout','même','aussi','très','bien','mais','car','entre','comme','sans','selon','après','encore','dont','autre','autres','via','deux','trois','sous','non','donc','cet','ces','comment','pourquoi','leur','leurs','nos','mon','chez','vers','lors','déjà','fois','tous','toute','toutes']);
+  const stop = new Set(['le','la','les','de','du','des','un','une','et','en','à','au','aux','pour','par','sur','avec','dans','qui','que','son','ses','est','sont','pas','plus','ce','cette','il','elle','on','nous','vous','ils','elles','se','sa','ou','d','l','s','n','c','j','y','a','été','être','avoir','fait','faire','peut','tout','même','aussi','très','bien','mais','car','entre','comme','sans','selon','après','encore','dont','autre','autres','via','deux','trois','sous','non','donc','cet','ces','comment','pourquoi','leur','leurs','nos','mon','chez','vers','lors','déjà','fois','tous','toute','toutes','cette','plus','peut','être','elle','nous','sont','vous']);
   S.articles.forEach(a => {
-    (a.title || '').toLowerCase().replace(/[^a-zàâäéèêëïîôùûüÿçœæ\s-]/g, '').split(/\s+/).forEach(m => {
+    (a.title + ' ' + stripHtml(a.description)).toLowerCase().replace(/[^a-zàâäéèêëïîôùûüÿçœæ\s-]/g, '').split(/\s+/).forEach(m => {
       if (m.length > 3 && !stop.has(m)) motsCles[m] = (motsCles[m] || 0) + 1;
     });
   });
-  const tendances = Object.entries(motsCles).filter(([_,c]) => c >= 2).sort((a,b) => b[1]-a[1]).slice(0,5).map(([m]) => m);
+  const tendances = Object.entries(motsCles).filter(([_,c]) => c >= 3).sort((a,b) => b[1]-a[1]).slice(0,8).map(([m]) => m);
+
+  // Regrouper les articles par thème via mots-clés communs
+  const themes = {};
+  const assigned = new Set();
+  // D'abord les tendances fortes comme thèmes
+  tendances.slice(0, 5).forEach(kw => {
+    const matching = S.articles.filter(a => {
+      const txt = (a.title + ' ' + stripHtml(a.description)).toLowerCase();
+      return txt.includes(kw) && !assigned.has(a.guid);
+    });
+    if (matching.length >= 2) {
+      themes[kw] = matching.slice(0, 4);
+      matching.slice(0, 4).forEach(a => assigned.add(a.guid));
+    }
+  });
+  // Articles restants non classés
+  const restants = S.articles.filter(a => !assigned.has(a.guid));
+
+  // Fonction pour résumer un article (titre + extrait description)
+  function miniResume(a) {
+    const desc = stripHtml(a.description);
+    const extrait = desc.length > 120 ? desc.substring(0, 120) + '…' : desc;
+    return `<li style="margin-bottom:8px">
+      <a href="${a.link}" target="_blank" style="color:#8EAADC;text-decoration:none;font-weight:600">${a.title}</a>
+      <small style="color:#6B84B8"> — ${a.source} · ${fmtDateShort(a.pubDate)}</small>
+      ${extrait ? `<br><span style="color:#9BAFC8;font-size:12px">${extrait}</span>` : ''}
+    </li>`;
+  }
+
+  // Construction du résumé
+  let h = '';
+
+  // Fait marquant
+  const marquant = alertes.length > 0 ? alertes[0] : S.articles[0];
+  const descM = stripHtml(marquant.description);
+  const extM = descM.length > 200 ? descM.substring(0, 200) + '…' : descM;
+  h += `<h3>🔥 Fait marquant</h3>`;
+  h += `<strong><a href="${marquant.link}" target="_blank" style="color:#8EAADC;text-decoration:underline">${marquant.title}</a></strong>`;
+  h += `<br><small style="color:#6B84B8">${marquant.source} · ${fmtDateShort(marquant.pubDate)}</small>`;
+  if (extM) h += `<br>${extM}`;
+
+  // Thèmes regroupés
+  const themeKeys = Object.keys(themes);
+  if (themeKeys.length > 0) {
+    h += `<h3>📰 Les sujets du jour</h3>`;
+    themeKeys.forEach(kw => {
+      const arts = themes[kw];
+      h += `<div style="margin-bottom:14px">`;
+      h += `<strong style="color:#8EAADC;text-transform:capitalize;font-size:14px">${kw}</strong> <small style="color:#6B84B8">(${arts.length} articles)</small>`;
+      h += `<ul style="margin:6px 0 0 16px">`;
+      arts.forEach(a => { h += miniResume(a); });
+      h += `</ul></div>`;
+    });
+  }
+
+  // Articles restants (hors thèmes)
+  if (restants.length > 0) {
+    const aAfficher = restants.slice(0, 8);
+    h += `<h3>📋 Autres actualités</h3>`;
+    h += `<ul>`;
+    aAfficher.forEach(a => { h += miniResume(a); });
+    h += `</ul>`;
+    if (restants.length > 8) {
+      h += `<p style="font-size:12px;color:#6B84B8">+ ${restants.length - 8} autres articles à découvrir ci-dessous.</p>`;
+    }
+  }
+
+  // Alertes
+  if (alertes.length > 0) {
+    h += `<h3>🔔 Alertes mots-clés (${alertes.length})</h3><ul>`;
+    alertes.slice(0, 5).forEach(a => { h += miniResume(a); });
+    if (alertes.length > 5) h += `<li style="color:#6B84B8">+ ${alertes.length - 5} autres alertes</li>`;
+    h += `</ul>`;
+  }
+
+  // Tendances
+  if (tendances.length > 0) {
+    h += `<h3>📊 Tendances</h3>`;
+    h += `<p>Mots-clés les plus cités : <strong>${tendances.join('</strong>, <strong>')}</strong></p>`;
+  }
+
+  // Tip
   const tips = [
     "Testez un outil IA mentionné dans les articles du jour.",
     "Prenez 10 min pour lire en détail l'article qui vous intrigue le plus.",
@@ -813,21 +899,13 @@ function generateEvening() {
     "Ajoutez en favoris les articles à relire plus tard.",
     "Résumez un article en 3 points pour entraîner votre synthèse."
   ];
-  const descM = stripHtml(marquant.description);
-  const extM = descM.length > 150 ? descM.substring(0,150) + '…' : descM;
-  let h = `<h3>🔥 Fait marquant</h3>`;
-  h += `<strong><a href="${marquant.link}" target="_blank" style="color:#8EAADC;text-decoration:underline">${marquant.title}</a></strong>`;
-  h += `<br><small style="color:#6B84B8">${marquant.source} · ${fmtDateShort(marquant.pubDate)}</small>`;
-  if (extM) h += `<br>${extM}`;
-  h += `<h3>📰 Autres événements clés</h3><ul>`;
-  autres.forEach(a => { h += `<li><a href="${a.link}" target="_blank" style="color:#C8D6EE">${a.title}</a> <small style="color:#6B84B8">— ${a.source}</small></li>`; });
-  h += `</ul>`;
-  if (tendances.length > 0) h += `<h3>📊 Tendances</h3><p>Mots-clés : <strong>${tendances.join('</strong>, <strong>')}</strong></p>`;
-  if (alertes.length > 0) h += `<h3>🔔 Alertes</h3><p>${alertes.length} article${alertes.length>1?'s':''} contenant vos mots-clés.</p>`;
   h += `<h3>💡 Tip</h3><p>${tips[now.getDate() % tips.length]}</p>`;
+
+  // Stats
   const srcList = Object.entries(parSource).filter(([_,c])=>c>0).map(([n,c])=>`${n} (${c})`).join(', ');
-  h += `<p style="margin-top:10px;font-size:12px;color:#6B84B8">${S.articles.length} articles — ${srcList}</p>`;
+  h += `<p style="margin-top:12px;font-size:12px;color:#6B84B8">📰 ${S.articles.length} articles analysés — ${srcList}</p>`;
   h += `<p class="sign">${salut} Léo et Déborah ! Bonne veille 🌙</p>`;
+
   $('evBody').innerHTML = h;
   $('evTs').textContent = `Généré le ${now.toLocaleString('fr-FR')}`;
 }

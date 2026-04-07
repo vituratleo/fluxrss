@@ -578,7 +578,14 @@ function renderPanel() {
   </div>`;
 
   let html = `<div class="panel-grid">${grid}</div>`;
-  html += `<div style="padding:16px 0 4px;border-top:1px solid var(--border);flex-shrink:0">
+  // Clé Groq
+  const groqKey = localStorage.getItem('groq_key') || '';
+  html += `<div style="padding:14px 0;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    <span style="font-size:13px;font-weight:700;color:var(--text2);white-space:nowrap">🤖 Clé Groq (résumé IA) :</span>
+    <input type="password" id="groqKeyInput" value="${groqKey}" placeholder="gsk_..." style="flex:1;min-width:200px;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:monospace;outline:none" />
+    <button onclick="localStorage.setItem('groq_key',$('groqKeyInput').value.trim());toast('Clé Groq sauvegardée !')" style="padding:8px 16px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">💾 Sauver</button>
+  </div>`;
+  html += `<div style="padding:12px 0 4px;flex-shrink:0">
     <button class="btn-ref" style="width:100%;justify-content:center;font-size:15px;padding:14px" onclick="closePanel();loadAll()">↻ Appliquer et recharger</button>
   </div>`;
 
@@ -785,129 +792,107 @@ async function loadAll() {
 }
 
 // Résumé du soir
-function generateEvening() {
+async function generateEvening() {
   if (S.articles.length === 0) { $('evBody').innerHTML = 'Aucun article chargé.'; return; }
+
+  $('evBody').innerHTML = '<div class="ld-dots"><span></span><span></span><span></span></div> L\'IA analyse vos articles...';
+  $('evTs').textContent = '';
+
+  // Préparer le contexte : tous les articles avec titre + description
+  const articlesCtx = S.articles.slice(0, 30).map((a, i) => {
+    const desc = stripHtml(a.description);
+    const extrait = desc.length > 200 ? desc.substring(0, 200) + '…' : desc;
+    return `${i+1}. [${a.source}] ${a.title}\n   ${extrait}`;
+  }).join('\n\n');
+
+  const alertes = S.articles.filter(isAlert);
+  const alertesTxt = alertes.length > 0
+    ? `\n\nArticles correspondant aux mots-clés surveillés (${S.keywords.join(', ')}) :\n` + alertes.slice(0, 8).map(a => `- ${a.title} (${a.source})`).join('\n')
+    : '';
+
   const now = new Date();
   const heure = now.getHours();
-  let salut = heure < 12 ? 'Bonjour' : heure < 18 ? 'Bon après-midi' : 'Bonsoir';
 
-  // Stats par source
-  const parSource = {};
-  getActiveFeeds().forEach(f => parSource[f.name] = 0);
-  S.articles.forEach(a => { if (parSource[a.source] !== undefined) parSource[a.source]++; });
+  const prompt = `Tu es un assistant de veille technologique pour Léo et Déborah. Voici ${S.articles.length} articles d'actualité récents :
 
-  // Alertes
-  const alertes = S.articles.filter(isAlert);
+${articlesCtx}${alertesTxt}
 
-  // Tendances mots-clés
-  const motsCles = {};
-  const stop = new Set(['le','la','les','de','du','des','un','une','et','en','à','au','aux','pour','par','sur','avec','dans','qui','que','son','ses','est','sont','pas','plus','ce','cette','il','elle','on','nous','vous','ils','elles','se','sa','ou','d','l','s','n','c','j','y','a','été','être','avoir','fait','faire','peut','tout','même','aussi','très','bien','mais','car','entre','comme','sans','selon','après','encore','dont','autre','autres','via','deux','trois','sous','non','donc','cet','ces','comment','pourquoi','leur','leurs','nos','mon','chez','vers','lors','déjà','fois','tous','toute','toutes','cette','plus','peut','être','elle','nous','sont','vous']);
-  S.articles.forEach(a => {
-    (a.title + ' ' + stripHtml(a.description)).toLowerCase().replace(/[^a-zàâäéèêëïîôùûüÿçœæ\s-]/g, '').split(/\s+/).forEach(m => {
-      if (m.length > 3 && !stop.has(m)) motsCles[m] = (motsCles[m] || 0) + 1;
+Rédige un résumé du soir complet, chaleureux et bien structuré en français (~400-500 mots). Structure :
+
+🔥 **Fait marquant du jour**
+Un paragraphe détaillé sur l'actualité la plus importante.
+
+📰 **Tour d'horizon des actus**
+Résume les grandes tendances en regroupant les articles par thème. Pour chaque thème, fais une synthèse de 2-3 phrases qui couvre tous les articles liés (pas juste les titres).
+
+🔔 **Alertes** (si pertinent)
+Mentionne les articles qui concernent : ${S.keywords.join(', ')}
+
+📊 **Tendances**
+Les sujets et technologies qui reviennent le plus.
+
+💡 **Tip du soir**
+Un conseil pratique inspiré par l'actu du jour.
+
+Termine par : "${heure < 12 ? 'Bonne journée' : heure < 18 ? 'Bon après-midi' : 'Bonne soirée'} Léo et Déborah ! 🌙"
+
+Utilise du markdown (gras avec **) pour structurer. Sois synthétique mais couvre un maximum d'articles.`;
+
+  try {
+    const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + (localStorage.getItem('groq_key') || '')
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        messages: [
+          { role: 'system', content: 'Tu es un journaliste tech français bienveillant qui fait des résumés de veille IA quotidiens. Tu écris de façon claire, chaleureuse et synthétique.' },
+          { role: 'user', content: prompt }
+        ],
+        max_completion_tokens: 1500,
+        temperature: 0.7
+      })
     });
-  });
-  const tendances = Object.entries(motsCles).filter(([_,c]) => c >= 3).sort((a,b) => b[1]-a[1]).slice(0,8).map(([m]) => m);
 
-  // Regrouper les articles par thème via mots-clés communs
-  const themes = {};
-  const assigned = new Set();
-  // D'abord les tendances fortes comme thèmes
-  tendances.slice(0, 5).forEach(kw => {
-    const matching = S.articles.filter(a => {
-      const txt = (a.title + ' ' + stripHtml(a.description)).toLowerCase();
-      return txt.includes(kw) && !assigned.has(a.guid);
-    });
-    if (matching.length >= 2) {
-      themes[kw] = matching.slice(0, 4);
-      matching.slice(0, 4).forEach(a => assigned.add(a.guid));
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({}));
+      throw new Error(err.error?.message || 'HTTP ' + r.status);
     }
-  });
-  // Articles restants non classés
-  const restants = S.articles.filter(a => !assigned.has(a.guid));
 
-  // Fonction pour résumer un article (titre + extrait description)
-  function miniResume(a) {
-    const desc = stripHtml(a.description);
-    const extrait = desc.length > 120 ? desc.substring(0, 120) + '…' : desc;
-    return `<li style="margin-bottom:8px">
-      <a href="${a.link}" target="_blank" style="color:#8EAADC;text-decoration:none;font-weight:600">${a.title}</a>
-      <small style="color:#6B84B8"> — ${a.source} · ${fmtDateShort(a.pubDate)}</small>
-      ${extrait ? `<br><span style="color:#9BAFC8;font-size:12px">${extrait}</span>` : ''}
-    </li>`;
+    const d = await r.json();
+    const text = d.choices[0].message.content;
+
+    // Convertir markdown en HTML
+    const html = text
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\n- /g, '\n• ')
+      .replace(/\n/g, '<br>');
+
+    $('evBody').innerHTML = html;
+    $('evTs').textContent = `Généré par IA (Groq Llama 3.3) le ${now.toLocaleString('fr-FR')}`;
+
+  } catch (e) {
+    // Fallback : résumé local si Groq échoue
+    $('evBody').innerHTML = `⚠️ Erreur Groq : ${e.message}<br><br>Résumé local :<br><br>` + generateEveningLocal();
+    $('evTs').textContent = `Fallback local — ${now.toLocaleString('fr-FR')}`;
   }
+}
 
-  // Construction du résumé
-  let h = '';
-
-  // Fait marquant
+// Résumé local (fallback si Groq échoue)
+function generateEveningLocal() {
+  const alertes = S.articles.filter(isAlert);
   const marquant = alertes.length > 0 ? alertes[0] : S.articles[0];
   const descM = stripHtml(marquant.description);
-  const extM = descM.length > 200 ? descM.substring(0, 200) + '…' : descM;
-  h += `<h3>🔥 Fait marquant</h3>`;
-  h += `<strong><a href="${marquant.link}" target="_blank" style="color:#8EAADC;text-decoration:underline">${marquant.title}</a></strong>`;
-  h += `<br><small style="color:#6B84B8">${marquant.source} · ${fmtDateShort(marquant.pubDate)}</small>`;
-  if (extM) h += `<br>${extM}`;
-
-  // Thèmes regroupés
-  const themeKeys = Object.keys(themes);
-  if (themeKeys.length > 0) {
-    h += `<h3>📰 Les sujets du jour</h3>`;
-    themeKeys.forEach(kw => {
-      const arts = themes[kw];
-      h += `<div style="margin-bottom:14px">`;
-      h += `<strong style="color:#8EAADC;text-transform:capitalize;font-size:14px">${kw}</strong> <small style="color:#6B84B8">(${arts.length} articles)</small>`;
-      h += `<ul style="margin:6px 0 0 16px">`;
-      arts.forEach(a => { h += miniResume(a); });
-      h += `</ul></div>`;
-    });
-  }
-
-  // Articles restants (hors thèmes)
-  if (restants.length > 0) {
-    const aAfficher = restants.slice(0, 8);
-    h += `<h3>📋 Autres actualités</h3>`;
-    h += `<ul>`;
-    aAfficher.forEach(a => { h += miniResume(a); });
-    h += `</ul>`;
-    if (restants.length > 8) {
-      h += `<p style="font-size:12px;color:#6B84B8">+ ${restants.length - 8} autres articles à découvrir ci-dessous.</p>`;
-    }
-  }
-
-  // Alertes
-  if (alertes.length > 0) {
-    h += `<h3>🔔 Alertes mots-clés (${alertes.length})</h3><ul>`;
-    alertes.slice(0, 5).forEach(a => { h += miniResume(a); });
-    if (alertes.length > 5) h += `<li style="color:#6B84B8">+ ${alertes.length - 5} autres alertes</li>`;
-    h += `</ul>`;
-  }
-
-  // Tendances
-  if (tendances.length > 0) {
-    h += `<h3>📊 Tendances</h3>`;
-    h += `<p>Mots-clés les plus cités : <strong>${tendances.join('</strong>, <strong>')}</strong></p>`;
-  }
-
-  // Tip
-  const tips = [
-    "Testez un outil IA mentionné dans les articles du jour.",
-    "Prenez 10 min pour lire en détail l'article qui vous intrigue le plus.",
-    "Partagez un article avec un collègue !",
-    "Créez une alerte sur un mot-clé tendance du jour.",
-    "Testez un prompt créatif en vous inspirant des sujets du jour.",
-    "Ajoutez en favoris les articles à relire plus tard.",
-    "Résumez un article en 3 points pour entraîner votre synthèse."
-  ];
-  h += `<h3>💡 Tip</h3><p>${tips[now.getDate() % tips.length]}</p>`;
-
-  // Stats
-  const srcList = Object.entries(parSource).filter(([_,c])=>c>0).map(([n,c])=>`${n} (${c})`).join(', ');
-  h += `<p style="margin-top:12px;font-size:12px;color:#6B84B8">📰 ${S.articles.length} articles analysés — ${srcList}</p>`;
-  h += `<p class="sign">${salut} Léo et Déborah ! Bonne veille 🌙</p>`;
-
-  $('evBody').innerHTML = h;
-  $('evTs').textContent = `Généré le ${now.toLocaleString('fr-FR')}`;
+  const extM = descM.length > 200 ? descM.substring(0,200) + '…' : descM;
+  let h = `<strong>🔥 ${marquant.title}</strong><br><small>${marquant.source}</small><br>${extM}<br><br>`;
+  h += `<strong>📰 Autres actus :</strong><br>`;
+  S.articles.filter(a => a.guid !== marquant.guid).slice(0, 6).forEach(a => {
+    const d = stripHtml(a.description);
+    h += `• <strong>${a.title}</strong> (${a.source})<br><small>${d.length > 100 ? d.substring(0,100)+'…' : d}</small><br>`;
+  });
+  return h;
 }
 
 // Render
@@ -935,12 +920,12 @@ function renderEvening() {
   if (S.evCollapsed) { ev.classList.add('collapsed'); $('evToggle').textContent = '▼'; }
   else { ev.classList.remove('collapsed'); $('evToggle').textContent = '▲'; }
 }
-function toggleEvening() {
+async function toggleEvening() {
   S.evCollapsed = !S.evCollapsed;
   renderEvening();
   if (!S.evCollapsed && !S.evGenerated && S.articles.length > 0) {
     S.evGenerated = true;
-    generateEvening();
+    await generateEvening();
   }
 }
 
@@ -1197,6 +1182,7 @@ function shareByMail(guid) {
 }
 
 async function init() {
+  // La clé Groq doit être saisie dans le panneau Sources
   switchProfile(S.profile);
   updateFeedBadge();
   renderStatuses(); renderKeywords(); renderNav(); renderStats(); renderEvening();
